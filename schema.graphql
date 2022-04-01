@@ -1,0 +1,31 @@
+type Metadata @entity {
+  id: ID!
+  blockHash: String
+  totalReserves: String
+  exchangeRate: String
+  reserveFactor: String
+  marketCap: String
+  totalStaked: String
+  totalStakers: Int
+  timastamps: Date
+}
+
+type StakingAction @entity {
+  id: ID!
+  blockHash: Metadata!
+  extrinsicHash: String!
+  address: Staker!
+  type: String!
+  amount: String!
+  timestamp: Date!
+}
+
+type Staker @entity {
+  id: ID!
+}
+
+type Ledger @entity {
+  id: ID!
+  total: String!
+  active: String!
+}

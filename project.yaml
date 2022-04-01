@@ -1,0 +1,41 @@
+specVersion: 0.2.0
+name: my-staking-subql
+version: 0.0.4
+description: >-
+  This SubQuery project can be use as a starting point for parallel-heiko
+  network
+repository: "https://github.com/subquery/parallel-heiko-subql-starter"
+schema:
+  file: ./schema.graphql
+network:
+  endpoint: "wss://regnet4-rpc.parallel.fi"
+  genesisHash: "0x9fca61c39094662c85f92f8916c91d031e753a92121db6a42fd9b509f870dba9"
+  chaintypes:
+    file: ./dist/chaintypes.js
+  dictionary: "https://api.subquery.network/sq/subquery/parallel-dictionary"
+dataSources:
+  - kind: substrate/Runtime
+    startBlock: 1
+    mapping:
+      file: ./dist/index.js
+      handlers:
+        - handler: handleBlock
+          kind: substrate/BlockHandler
+
+        - handler: handleStakeEvent
+          kind: substrate/EventHandler
+          filter:
+            module: liquidStaking
+            method: Staked
+
+        - handler: handleUnstakeEvent
+          kind: substrate/EventHandler
+          filter:
+            module: liquidStaking
+            method: Unstaked
+
+        - handler: handleUpLedger
+          kind: substrate/EventHandler
+          filter:
+            module: liquidStaking
+            method: StakingLedgerUpdated
