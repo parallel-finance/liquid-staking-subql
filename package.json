@@ -6,6 +6,8 @@
   "scripts": {
     "build": "tsc -b",
     "prepack": "rm -rf dist && npm build",
+    "ipfs:heiko": "subql publish -f ./deploy-heiko.yaml",
+    "ipfs:para": "subql publish -f ./deploy-parallel.yaml",
     "test": "jest",
     "codegen": "./node_modules/.bin/subql codegen"
   },

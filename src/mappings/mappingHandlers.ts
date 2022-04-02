@@ -70,19 +70,20 @@ export async function handleUnstakeEvent(event: SubstrateEvent) {
 
 export async function handleUpLedger(event: SubstrateEvent) {
   const blockHash = event.block.block.header.hash;
-  const [derivativeIndex, stakingLedger] = event.event.data;
+  const derivativeIndex = event.event.data[0];
+  const stakingLedger = event.event.data[1] as PalletStakingStakingLedger;
   let ledgerRecord = await Ledger.get(derivativeIndex.toString());
 
   if (!ledgerRecord) {
     ledgerRecord = new Ledger(derivativeIndex.toString());
   }
 
-  ledgerRecord.active = (
-    stakingLedger as PalletStakingStakingLedger
-  ).active.toString();
-  ledgerRecord.total = (
-    stakingLedger as PalletStakingStakingLedger
-  ).total.toString();
+  ledgerRecord.active = stakingLedger.active.toString();
+  ledgerRecord.total = stakingLedger.total.toString();
+  ledgerRecord.unlocking = stakingLedger.unlocking.map((item) => ({
+    era: item.era.toNumber(),
+    value: item.value.toString(),
+  }));
 
   await ledgerRecord.save();
   await updateMetadataTotalStaked(blockHash);

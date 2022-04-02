@@ -45,7 +45,7 @@ export async function updateMetadataTotalStaked(blockHash) {
         },
         { totalBonded: BN_ZERO, totalUnbonding: BN_ZERO }
       );
-    metadataRecord.totalStaked = result.totalBonded
+    metadataRecord.totalLocked = result.totalBonded
       .add(result.totalUnbonding)
       .add(balance)
       .sub(new BN(metadataRecord.totalReserves))
