@@ -15,7 +15,7 @@ network:
   dictionary: "https://api.subquery.network/sq/subquery/parallel-dictionary"
 dataSources:
   - kind: substrate/Runtime
-    startBlock: 127536
+    startBlock: 128150
     mapping:
       file: ./dist/index.js
       handlers:
@@ -34,7 +34,7 @@ dataSources:
             module: liquidStaking
             method: Unstaked
 
-        - handler: handleUpLedger
+        - handler: handleUpdateLedger
           kind: substrate/EventHandler
           filter:
             module: liquidStaking

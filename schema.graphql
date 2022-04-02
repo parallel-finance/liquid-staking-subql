@@ -16,14 +16,10 @@ type StakingAction @entity {
   blockHash: Metadata!
   height: Int!
   extrinsicHash: String!
-  address: Staker!
+  address: String! @index(unique: false)
   type: String!
   amount: String!
   timestamp: Date!
-}
-
-type Staker @entity {
-  id: ID!
 }
 
 type LockingItem @jsonField {

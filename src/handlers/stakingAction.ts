@@ -5,8 +5,8 @@ export async function updateStakingAction(event: SubstrateEvent) {
   const blockHash = event.block.block.header.hash.toString();
   const { hash, args, signer } = event.extrinsic.extrinsic;
   const address = signer.toString();
-  const id = `${blockHash}-${address}`;
   const extrinsicHash = hash.toString();
+  const id = `${event.idx}-${extrinsicHash}`;
   const type = event.event.method;
   const amount = args[0].toString();
   const timestamp = event.block.timestamp;
@@ -14,7 +14,7 @@ export async function updateStakingAction(event: SubstrateEvent) {
     id,
     blockHashId: blockHash,
     height: event.block.block.header.number.toNumber(),
-    addressId: address,
+    address: address,
     extrinsicHash,
     type,
     amount,

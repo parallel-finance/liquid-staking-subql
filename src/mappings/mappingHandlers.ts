@@ -2,12 +2,11 @@ import { SubstrateEvent, SubstrateBlock } from "@subql/types";
 import { u128 } from "@polkadot/types";
 import { Permill } from "@polkadot/types/interfaces";
 import { PalletStakingStakingLedger } from "@polkadot/types/lookup";
-import { Metadata, StakingAction, Ledger } from "../types";
+import { Metadata, Ledger } from "../types";
 
 import {
-  updateMetadataTotalStakers,
-  updateMetadataTotalStaked,
-  updateStaker,
+  updateMetadataTotalStakersAndStakingAction,
+  updateMetadataTotalLocked,
   updateStakingAction,
 } from "../handlers";
 
@@ -39,21 +38,18 @@ export async function handleBlock(block: SubstrateBlock): Promise<void> {
   record.timastamps = block.timestamp;
   record.height = block.block.header.number.toNumber();
   await record.save();
-  await updateMetadataTotalStaked(blockHash);
+  await updateMetadataTotalLocked(blockHash);
 }
 
 export async function handleStakeEvent(event: SubstrateEvent) {
-  const address = event.extrinsic.extrinsic.signer.toString();
-  await updateMetadataTotalStakers(event.block.block.header, address);
-  await updateStaker(address);
-  await updateStakingAction(event);
+  await updateMetadataTotalStakersAndStakingAction(event);
 }
 
 export async function handleUnstakeEvent(event: SubstrateEvent) {
   await updateStakingAction(event);
 }
 
-export async function handleUpLedger(event: SubstrateEvent) {
+export async function handleUpdateLedger(event: SubstrateEvent) {
   const blockHash = event.block.block.header.hash;
   const derivativeIndex = event.event.data[0];
   const stakingLedger = event.event.data[1] as PalletStakingStakingLedger;
@@ -71,5 +67,5 @@ export async function handleUpLedger(event: SubstrateEvent) {
   }));
 
   await ledgerRecord.save();
-  await updateMetadataTotalStaked(blockHash);
+  await updateMetadataTotalLocked(blockHash);
 }
