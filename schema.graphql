@@ -5,7 +5,7 @@ type Metadata @entity {
   exchangeRate: String
   reserveFactor: String
   marketCap: String
-  totalStaked: String
+  totalLocked: String
   totalStakers: Int
   timastamps: Date
 }
@@ -24,8 +24,14 @@ type Staker @entity {
   id: ID!
 }
 
+type LockingItem @jsonField {
+  value: String!
+  era: Int!
+}
+
 type Ledger @entity {
   id: ID!
   total: String!
   active: String!
+  unlocking: [LockingItem!]!
 }
