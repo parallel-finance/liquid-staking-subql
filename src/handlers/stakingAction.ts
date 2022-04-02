@@ -13,6 +13,7 @@ export async function updateStakingAction(event: SubstrateEvent) {
   const record = StakingAction.create({
     id,
     blockHashId: blockHash,
+    height: event.block.block.header.number.toNumber(),
     addressId: address,
     extrinsicHash,
     type,

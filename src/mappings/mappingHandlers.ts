@@ -8,6 +8,7 @@ import {
   updateMetadataTotalStakers,
   updateMetadataTotalStaked,
   updateStaker,
+  updateStakingAction,
 } from "../handlers";
 
 export async function handleBlock(block: SubstrateBlock): Promise<void> {
@@ -21,9 +22,14 @@ export async function handleBlock(block: SubstrateBlock): Promise<void> {
       api.query.liquidStaking.marketCap,
     ]);
   let record = await Metadata.get(blockHash);
+  const parentRecord = await Metadata.get(
+    block.block.header.parentHash.toString()
+  );
   if (!record) {
     record = new Metadata(blockHash);
-    record.totalStakers = 0;
+    record.totalStakers = parentRecord?.totalStakers
+      ? parentRecord.totalStakers
+      : 0;
   }
   record.blockHash = blockHash;
   record.totalReserves = totalReserves.toString();
@@ -31,36 +37,15 @@ export async function handleBlock(block: SubstrateBlock): Promise<void> {
   record.reserveFactor = reserveFactor.toString();
   record.marketCap = marketCap.toString();
   record.timastamps = block.timestamp;
+  record.height = block.block.header.number.toNumber();
   await record.save();
   await updateMetadataTotalStaked(blockHash);
 }
 
-export async function updateStakingAction(event: SubstrateEvent) {
-  const blockHash = event.block.block.header.hash.toString();
-  const { hash, args, signer } = event.extrinsic.extrinsic;
-  const address = signer.toString();
-  const id = `${blockHash}-${address}`;
-  const extrinsicHash = hash.toString();
-  const type = event.event.method;
-  const amount = args[0].toString();
-  const timestamp = event.block.timestamp;
-  const record = StakingAction.create({
-    id,
-    blockHashId: blockHash,
-    addressId: address,
-    extrinsicHash,
-    type,
-    amount,
-    timestamp,
-  });
-  await record.save();
-}
-
 export async function handleStakeEvent(event: SubstrateEvent) {
-  const blockHash = event.block.block.header.hash.toString();
   const address = event.extrinsic.extrinsic.signer.toString();
+  await updateMetadataTotalStakers(event.block.block.header, address);
   await updateStaker(address);
-  await updateMetadataTotalStakers(blockHash, address);
   await updateStakingAction(event);
 }
 
