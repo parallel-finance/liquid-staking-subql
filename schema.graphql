@@ -1,6 +1,7 @@
 type Metadata @entity {
   id: ID!
   blockHash: String
+  height: Int
   totalReserves: String
   exchangeRate: String
   reserveFactor: String
@@ -13,6 +14,7 @@ type Metadata @entity {
 type StakingAction @entity {
   id: ID!
   blockHash: Metadata!
+  height: Int!
   extrinsicHash: String!
   address: Staker!
   type: String!

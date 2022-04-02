@@ -1,17 +1,24 @@
 import { Vec, u16, Option } from "@polkadot/types";
 import { BN_ZERO, BN } from "@polkadot/util";
 import { PalletAssetsAssetAccount } from "@polkadot/types/lookup";
-import { Metadata, Staker, Ledger } from "../types";
+import { Metadata, Staker, Ledger, StakingAction } from "../types";
 import { createAddress } from "../utils";
+import { Header } from "@polkadot/types/interfaces";
 
 const derivativeIndexList = api.consts.liquidStaking
   .derivativeIndexList as Vec<u16>;
 
-export async function updateMetadataTotalStakers(blockHash, stakerAddress) {
-  let metadataRecord = await Metadata.get(blockHash);
+export async function updateMetadataTotalStakers(
+  header: Header,
+  stakerAddress: string
+) {
+  const parentRecord = await Metadata.get(header.parentHash.toString());
+  let metadataRecord = await Metadata.get(header.hash.toString());
   if (!metadataRecord) {
-    metadataRecord = new Metadata(blockHash);
-    metadataRecord.totalStakers = 0;
+    metadataRecord = new Metadata(header.hash.toString());
+    metadataRecord.totalStakers = parentRecord?.totalStakers
+      ? parentRecord.totalStakers
+      : 0;
   }
   if (!(await Staker.get(stakerAddress))) {
     metadataRecord.totalStakers += 1;

@@ -15,7 +15,7 @@ network:
   dictionary: "https://api.subquery.network/sq/subquery/parallel-dictionary"
 dataSources:
   - kind: substrate/Runtime
-    startBlock: 1
+    startBlock: 127536
     mapping:
       file: ./dist/index.js
       handlers:
