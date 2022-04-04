@@ -1,10 +1,9 @@
 specVersion: 0.2.0
-name: my-staking-subql
-version: 0.0.4
+name: heiko-liquid-staking-subql
+version: 1.0.0
 description: >-
-  This SubQuery project can be use as a starting point for parallel-heiko
-  network
-repository: "https://github.com/subquery/parallel-heiko-subql-starter"
+  Subql service for Liquid-staking in the heiko network
+repository: "https://github.com/parallel-finance/liquid-staking-subql"
 schema:
   file: ./schema.graphql
 network:

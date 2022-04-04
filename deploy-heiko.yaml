@@ -33,7 +33,7 @@ dataSources:
             module: liquidStaking
             method: Unstaked
 
-        - handler: handleUpLedger
+        - handler: handleUpdateLedger
           kind: substrate/EventHandler
           filter:
             module: liquidStaking
