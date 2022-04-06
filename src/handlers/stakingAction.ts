@@ -12,7 +12,7 @@ export async function updateStakingAction(event: SubstrateEvent) {
   const timestamp = event.block.timestamp;
   const record = StakingAction.create({
     id,
-    blockHashId: blockHash,
+    metadataId: blockHash,
     blockHeight: event.block.block.header.number.toNumber(),
     address: address,
     extrinsicHash,

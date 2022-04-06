@@ -8,7 +8,7 @@ export function updateLedgerBlockHeight(height: number) {
     ledgers
       .filter((ledger) => !!ledger)
       .forEach(async (ledger) => {
-        ledger.height = height;
+        ledger.blockHeight = height;
         await ledger.save();
       });
   });
