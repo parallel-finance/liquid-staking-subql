@@ -1,7 +1,6 @@
 import { SubstrateEvent, SubstrateBlock } from "@subql/types";
 import { PalletStakingStakingLedger } from "@polkadot/types/lookup";
 import { Ledger } from "../types";
-import { blockHandleWrapper } from "../utils";
 
 import {
   updateMetadataTotalStakersAndStakingAction,
@@ -11,7 +10,7 @@ import {
 } from "../handlers";
 
 export async function handleBlock(block: SubstrateBlock): Promise<void> {
-  await blockHandleWrapper(block, updateBlockMetadatas);
+  await updateBlockMetadatas(block);
 }
 
 export async function handleStakeEvent(event: SubstrateEvent) {
