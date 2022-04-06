@@ -37,7 +37,7 @@ export async function updateBlockMetadatas(
   record.reserveFactor = reserveFactor.toString();
   record.marketCap = marketCap.toString();
   record.timestamp = block.timestamp;
-  record.height = block.block.header.number.toNumber();
+  record.blockHeight = block.block.header.number.toNumber();
   await record.save();
   await updateMetadataTotalLocked(blockHash);
   await updateLedgerBlockHeight(block.block.header.number.toNumber());
