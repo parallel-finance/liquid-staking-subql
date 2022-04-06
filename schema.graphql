@@ -1,14 +1,14 @@
 type Metadata @entity {
   id: ID!
   blockHash: String
-  height: Int
+  height: Int @index(unique: true)
   totalReserves: String
   exchangeRate: String
   reserveFactor: String
   marketCap: String
   totalLocked: String
   totalStakers: Int
-  timastamps: Date
+  timestamp: Date
 }
 
 type StakingAction @entity {
@@ -29,6 +29,7 @@ type LockingItem @jsonField {
 
 type Ledger @entity {
   id: ID!
+  height: Int @index(unique: false)
   total: String!
   active: String!
   unlocking: [LockingItem!]!
