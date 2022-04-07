@@ -1,5 +1,6 @@
 import { SubstrateEvent, SubstrateBlock } from "@subql/types";
 import { PalletStakingStakingLedger } from "@polkadot/types/lookup";
+import { stakingCurrency } from "../constants";
 import { Ledger } from "../types";
 
 import {
@@ -37,6 +38,7 @@ export async function handleUpdateLedger(event: SubstrateEvent) {
     era: item.era.toNumber(),
     value: item.value.toString(),
   }));
+  ledgerRecord.assetId = stakingCurrency.toNumber();
 
   await ledgerRecord.save();
   await updateMetadataTotalLocked(blockHash);

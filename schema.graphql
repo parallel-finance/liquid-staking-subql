@@ -1,5 +1,7 @@
 type Metadata @entity {
   id: ID!
+  stakingAssetId: Int
+  liquidAssetId: Int
   blockHash: String
   blockHeight: Int @index(unique: true)
   totalReserves: String
@@ -13,6 +15,7 @@ type Metadata @entity {
 
 type StakingAction @entity {
   id: ID!
+  assetId: Int!
   metadata: Metadata!
   blockHeight: Int! @index(unique: false)
   extrinsicHash: String!
@@ -29,6 +32,7 @@ type LockingItem @jsonField {
 
 type Ledger @entity {
   id: ID!
+  assetId: Int!
   blockHeight: Int @index(unique: true)
   total: String!
   active: String!

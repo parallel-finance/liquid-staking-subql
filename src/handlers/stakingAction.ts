@@ -1,4 +1,5 @@
 import { SubstrateEvent } from "@subql/types";
+import { stakingCurrency, liquidCurrency } from "../constants";
 import { StakingAction } from "../types";
 
 export async function updateStakingAction(event: SubstrateEvent) {
@@ -19,6 +20,10 @@ export async function updateStakingAction(event: SubstrateEvent) {
     type,
     amount,
     timestamp,
+    assetId:
+      type === "Staked"
+        ? stakingCurrency.toNumber()
+        : liquidCurrency.toNumber(),
   });
   await record.save();
 }

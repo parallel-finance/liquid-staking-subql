@@ -6,7 +6,11 @@ import { BN_ZERO, BN } from "@polkadot/util";
 import { Metadata, Ledger, StakingAction } from "../types";
 import { createAddress } from "../utils";
 import { updateStakingAction } from "./stakingAction";
-import { derivativeIndexList, stakingCurrency } from "../constants";
+import {
+  derivativeIndexList,
+  liquidCurrency,
+  stakingCurrency,
+} from "../constants";
 import { updateLedgerBlockHeight } from "./ledger";
 
 export async function updateBlockMetadatas(
@@ -27,10 +31,12 @@ export async function updateBlockMetadatas(
   );
   if (!record) {
     record = new Metadata(blockHash);
-    record.totalStakers = parentRecord?.totalStakers
-      ? parentRecord.totalStakers
-      : 0;
   }
+  record.totalStakers = parentRecord?.totalStakers
+    ? parentRecord.totalStakers
+    : 0;
+  record.stakingAssetId = stakingCurrency.toNumber();
+  record.liquidAssetId = liquidCurrency.toNumber();
   record.blockHash = blockHash;
   record.totalReserves = totalReserves.toString();
   record.exchangeRate = exchangeRate.toString();
