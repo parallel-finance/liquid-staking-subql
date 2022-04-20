@@ -23,7 +23,7 @@ export async function updateBlockMetadatas(
       api.query.liquidStaking.totalReserves,
       api.query.liquidStaking.exchangeRate,
       api.query.liquidStaking.reserveFactor,
-      api.query.liquidStaking.marketCap,
+      api.query.liquidStaking.stakingLedgerCap,
     ]);
   let record = await Metadata.get(blockHash);
   const parentRecord = await Metadata.get(
