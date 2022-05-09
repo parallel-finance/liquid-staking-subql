@@ -33,7 +33,7 @@ type LockingItem @jsonField {
 type Ledger @entity {
   id: ID!
   assetId: Int!
-  blockHeight: Int @index(unique: true)
+  blockHeight: Int @index(unique: false)
   total: String!
   active: String!
   unlocking: [LockingItem!]!

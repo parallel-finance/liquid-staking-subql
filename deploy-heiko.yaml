@@ -7,7 +7,7 @@ repository: "https://github.com/parallel-finance/liquid-staking-subql"
 runner:
   node:
     name: "@subql/node"
-    version: "0.33.0"
+    version: "0.35.1"
   query:
     name: "@subql/query"
     version: "^0.12.0"
@@ -21,7 +21,7 @@ network:
   dictionary: "https://api.subquery.network/sq/subquery/parallel-heiko-dictionary"
 dataSources:
   - kind: substrate/Runtime
-    startBlock: 1061271
+    startBlock: 907136
     mapping:
       file: ./dist/index.js
       handlers:

@@ -1,5 +1,5 @@
 import { SubstrateEvent, SubstrateBlock } from "@subql/types";
-import { Vec, u16, u128, Option } from "@polkadot/types";
+import { u128, Option } from "@polkadot/types";
 import { Permill } from "@polkadot/types/interfaces";
 import { PalletAssetsAssetAccount } from "@polkadot/types/lookup";
 import { BN_ZERO, BN } from "@polkadot/util";
@@ -13,17 +13,41 @@ import {
 } from "../constants";
 import { updateLedgerBlockHeight } from "./ledger";
 
+const getCapBreakingApiBlockHeight = (): Promise<number> => {
+  let blockHeight: number;
+  const fn = async () => {
+    if (blockHeight) return blockHeight;
+
+    const lastRuntimeUpgrade = await api.query.system.lastRuntimeUpgrade();
+    if (lastRuntimeUpgrade.isNone) {
+      logger.error(`some thing wrong on lastRuntimeUpgrade at ${blockHeight}`);
+      return 0;
+    }
+    const chain = lastRuntimeUpgrade.unwrap().specName.toString().toLowerCase();
+
+    if (chain.startsWith("parallel")) {
+      blockHeight = 0;
+    } else {
+      blockHeight = 1061270; // the runtime upgrade breaking change
+    }
+    return blockHeight;
+  };
+  return fn();
+};
+
 export async function updateBlockMetadatas(
   block: SubstrateBlock
 ): Promise<void> {
   const blockHash = block.block.header.hash.toString();
-
+  const ledgerCapBreakingBlockHeight = await getCapBreakingApiBlockHeight();
   const [totalReserves, exchangeRate, reserveFactor, marketCap] =
     await api.queryMulti<[u128, u128, Permill, u128]>([
       api.query.liquidStaking.totalReserves,
       api.query.liquidStaking.exchangeRate,
       api.query.liquidStaking.reserveFactor,
-      api.query.liquidStaking.stakingLedgerCap,
+      block.block.header.number.toNumber() > ledgerCapBreakingBlockHeight
+        ? api.query.liquidStaking.stakingLedgerCap
+        : api.query.liquidStaking.marketCap,
     ]);
   let record = await Metadata.get(blockHash);
   const parentRecord = await Metadata.get(
