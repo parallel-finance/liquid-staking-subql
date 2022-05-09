@@ -5,11 +5,11 @@ description: Subql service for Liquid-staking in the parallel network
 repository: "https://github.com/parallel-finance/liquid-staking-subql"
 runner:
   node:
-    name: '@subql/node'
-    version: '0.33.0'
+    name: "@subql/node"
+    version: "0.35.1"
   query:
-    name: '@subql/query'
-    version: '^0.12.0'
+    name: "@subql/query"
+    version: "^0.12.0"
 schema:
   file: ./schema.graphql
 network:
