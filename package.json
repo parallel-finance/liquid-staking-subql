@@ -9,7 +9,8 @@
     "ipfs:heiko": "subql publish -f ./deploy-heiko.yaml",
     "ipfs:para": "subql publish -f ./deploy-parallel.yaml",
     "test": "jest",
-    "codegen": "./node_modules/.bin/subql codegen"
+    "codegen": "./node_modules/.bin/subql codegen",
+    "ipfs:publish": "./node_modules/.bin/subql publish"
   },
   "homepage": "https://github.com/subquery/parallel-heiko-subql-starter",
   "repository": "github:subquery/parallel-heiko-subql-starter",
