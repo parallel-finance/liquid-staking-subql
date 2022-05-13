@@ -1,4 +1,4 @@
-name: Deploy with Parallel RPC
+name: Deploy
 
 on:
   workflow_dispatch:
@@ -12,6 +12,10 @@ jobs:
   publish:
     name: IPFS publish
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        manifest: ['heiko', 'parallel', 'project']
 
     steps:
       - uses: actions/checkout@v2
@@ -30,6 +34,6 @@ jobs:
         run: yarn codegen
 
       - name: Publish to IPFS
-        run: yarn ipfs:publish -f deploy-parallel.yaml
+        run: yarn ipfs:publish -f ${{ matrix.manifest }}.yaml
         env:
           SUBQL_ACCESS_TOKEN: ${{ github.event.inputs.subqlAccessToken }}

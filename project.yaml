@@ -3,15 +3,15 @@ name: heiko-liquid-staking-subql
 version: 1.0.0
 description: >-
   Subql service for Liquid-staking in the heiko network
-repository: "https://github.com/parallel-finance/liquid-staking-subql"
+repository: 'https://github.com/parallel-finance/liquid-staking-subql'
 schema:
   file: ./schema.graphql
 network:
-  endpoint: "wss://regnet4-rpc.parallel.fi"
-  genesisHash: "0x52a356be4230c408078c2c12ad191d6bb432be9461bc6302e8928270a1acf820"
+  endpoint: 'wss://regnet4-rpc.parallel.fi'
+  genesisHash: '0x52a356be4230c408078c2c12ad191d6bb432be9461bc6302e8928270a1acf820'
   chaintypes:
     file: ./dist/chaintypes.js
-  dictionary: "https://api.subquery.network/sq/subquery/parallel-dictionary"
+  dictionary: 'https://api.subquery.network/sq/subquery/parallel-dictionary'
 dataSources:
   - kind: substrate/Runtime
     startBlock: 600
@@ -38,3 +38,21 @@ dataSources:
           filter:
             module: liquidStaking
             method: StakingLedgerUpdated
+
+        - handler: handleSTokenIssued
+          kind: substrate/EventHandler
+          filter:
+            module: assets
+            method: Issued
+
+        - handler: handleSTokenBurned
+          kind: substrate/EventHandler
+          filter:
+            module: assets
+            method: Burned
+
+        - handler: handleSTokenTransferred
+          kind: substrate/EventHandler
+          filter:
+            module: assets
+            method: Transferred
