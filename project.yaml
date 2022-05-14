@@ -1,20 +1,27 @@
-specVersion: 0.2.0
+specVersion: 1.0.0
 name: heiko-liquid-staking-subql
 version: 1.0.0
 description: >-
   Subql service for Liquid-staking in the heiko network
 repository: "https://github.com/parallel-finance/liquid-staking-subql"
+runner:
+  node:
+    name: "@subql/node"
+    version: "1.0.0"
+  query:
+    name: "@subql/query"
+    version: "^0.12.0"
 schema:
   file: ./schema.graphql
 network:
-  endpoint: "wss://regnet4-rpc.parallel.fi"
-  genesisHash: "0x52a356be4230c408078c2c12ad191d6bb432be9461bc6302e8928270a1acf820"
+  endpoint: "wss://regnet-rpc.parallel.fi"
+  genesisHash: "0xb74087ce0489f8f0d19adc3eb70e82ec7e78ecc7166e0174b8dbb9d6418812eb"
   chaintypes:
     file: ./dist/chaintypes.js
   dictionary: "https://api.subquery.network/sq/subquery/parallel-dictionary"
 dataSources:
   - kind: substrate/Runtime
-    startBlock: 600
+    startBlock: 0
     mapping:
       file: ./dist/index.js
       handlers:

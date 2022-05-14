@@ -3,19 +3,16 @@ import { stakingCurrency, liquidCurrency } from "../constants";
 import { StakingAction } from "../types";
 
 export async function updateStakingAction(event: SubstrateEvent) {
-  const blockHash = event.block.block.header.hash.toString();
-  const { hash, args, signer } = event.extrinsic.extrinsic;
-  const address = signer.toString();
-  const extrinsicHash = hash.toString();
+  const [address, amount] = event.event.data.map((v) => v.toString());
+  const extrinsicHash = event.extrinsic.extrinsic.hash.toString();
   const id = `${event.idx}-${extrinsicHash}`;
   const type = event.event.method;
-  const amount = args[0].toString();
   const timestamp = event.block.timestamp;
   const record = StakingAction.create({
     id,
-    metadataId: blockHash,
+    metadataId: event.block.block.header.hash.toString(),
     blockHeight: event.block.block.header.number.toNumber(),
-    address: address,
+    address,
     extrinsicHash,
     type,
     amount,
