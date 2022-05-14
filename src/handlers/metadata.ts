@@ -77,7 +77,7 @@ export async function updateMetadataTotalStakersAndStakingAction(
   event: SubstrateEvent
 ) {
   const blockHash = event.block.block.header.hash.toString();
-  const address = event.extrinsic.extrinsic.signer.toString();
+  const address = event.event.data[0].toString();
   const parentRecord = await Metadata.get(
     event.block.block.header.parentHash.toString()
   );
