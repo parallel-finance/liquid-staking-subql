@@ -7,7 +7,7 @@ repository: "https://github.com/parallel-finance/liquid-staking-subql"
 runner:
   node:
     name: "@subql/node"
-    version: "0.35.1"
+    version: "1.0.0"
   query:
     name: "@subql/query"
     version: "^0.12.0"
