@@ -94,9 +94,12 @@ export async function handleSTokenBurned(event: SubstrateEvent) {
   if (!position) return
 
   const newBalance = new BN(position.balance).sub(amount.toBn())
-  const newEarned = new BN(position.earned).add(
-    exchangeRate.toBn().sub(new BN(position.avgExchangeRate)).mul(amount.toBn())
-  )
+  const newEarned = exchangeRate
+    .toBn()
+    .sub(new BN(position.avgExchangeRate))
+    .mul(amount.toBn())
+    .div(new BN(1e18))
+    .add(new BN(position.earned))
 
   position.balance = newBalance.toString()
   position.earned = newEarned.toString()
@@ -155,6 +158,7 @@ export async function handleSTokenTransferred(event: SubstrateEvent) {
     .toBn()
     .sub(new BN(fromPosition.avgExchangeRate))
     .mul(amount.toBn())
+    .div(new BN(1e18))
     .add(new BN(fromPosition.earned))
   const newFromBalance = new BN(fromPosition.balance).sub(amount.toBn())
 
