@@ -58,15 +58,17 @@ export async function handleSTokenIssued(event: SubstrateEvent) {
   const exchangeRate = (await api.query.liquidStaking.exchangeRate()) as Rate
 
   let position = await Position.get(id)
-  if (!position)
-    return await Position.create({
+  if (!position) {
+    Position.create({
       id,
       earned: '0',
       avgExchangeRate: exchangeRate.toString(),
       balance: amount.toString()
     })
+    return
+  }
 
-  const newBalance = new BN(position.balance).sub(amount.toBn())
+  const newBalance = new BN(position.balance).add(amount.toBn())
   const newAvgExchangeRate = new BN(position.avgExchangeRate)
     .mul(new BN(position.balance))
     .add(amount.toBn().mul(exchangeRate.toBn()))
@@ -126,35 +128,38 @@ export async function handleSTokenTransferred(event: SubstrateEvent) {
   }
 
   const fromPosition = await Position.get(from)
-  if (!fromPosition) return
+  if (!fromPosition) {
+    return
+  }
+
   const toPosition = await Position.get(to)
   if (!toPosition) {
-    await Position.create({
+    Position.create({
       id: to,
       earned: '0',
       avgExchangeRate: exchangeRate.toString(),
       balance: amount.toString()
     })
-  } else {
-    const newBalance = new BN(toPosition.balance).add(amount.toBn())
-    toPosition.avgExchangeRate = new BN(toPosition.avgExchangeRate)
-      .mul(new BN(toPosition.balance))
-      .add(amount.toBn().mul(exchangeRate.toBn()))
-      .div(newBalance)
-      .toString()
-    toPosition.balance = newBalance.toString()
+    return
   }
 
-  const newEarned = new BN(fromPosition.earned).add(
-    exchangeRate
-      .toBn()
-      .sub(new BN(fromPosition.avgExchangeRate))
-      .mul(amount.toBn())
-  )
-  const newBalance = new BN(fromPosition.balance).sub(amount.toBn())
+  const newToBalance = new BN(toPosition.balance).add(amount.toBn())
+  toPosition.avgExchangeRate = new BN(toPosition.avgExchangeRate)
+    .mul(new BN(toPosition.balance))
+    .add(amount.toBn().mul(exchangeRate.toBn()))
+    .div(newToBalance)
+    .toString()
+  toPosition.balance = newToBalance.toString()
 
-  fromPosition.balance = newBalance.toString()
-  fromPosition.earned = newEarned.toString()
+  const newFromEarned = exchangeRate
+    .toBn()
+    .sub(new BN(fromPosition.avgExchangeRate))
+    .mul(amount.toBn())
+    .add(new BN(fromPosition.earned))
+  const newFromBalance = new BN(fromPosition.balance).sub(amount.toBn())
+
+  fromPosition.balance = newFromBalance.toString()
+  fromPosition.earned = newFromEarned.toString()
 
   await toPosition.save()
   await fromPosition.save()
