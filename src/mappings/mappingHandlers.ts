@@ -4,7 +4,7 @@ import { stakingCurrency, liquidCurrency } from '../constants'
 import { Ledger, Position } from '../types'
 import { BN } from '@polkadot/util'
 import { AccountId } from '@polkadot/types/interfaces'
-import { Rate, Balance, CurrencyId } from '@parallel-finance/types/interfaces'
+import { Rate, Balance, AssetId } from '@parallel-finance/types/interfaces'
 import {
   updateMetadataTotalStakersAndStakingAction,
   updateMetadataTotalLocked,
@@ -48,24 +48,28 @@ export async function handleUpdateLedger(event: SubstrateEvent) {
 }
 
 export async function handleSTokenIssued(event: SubstrateEvent) {
-  const assetId = event.event.data[0] as CurrencyId
+  const assetId = event.event.data[0] as AssetId
   if (!assetId.eq(liquidCurrency)) {
     return
   }
 
-  const id = event.event.data[1].toString()
+  const account = event.event.data[1] as AccountId
   const amount = event.event.data[2] as Balance
-  const exchangeRate = (await api.query.liquidStaking.exchangeRate()) as Rate
 
+  await handleBuyOrder(account, amount)
+}
+
+async function handleBuyOrder(account: AccountId, amount: Balance) {
+  const id = account.toString()
+  const exchangeRate = (await api.query.liquidStaking.exchangeRate()) as Rate
   let position = await Position.get(id)
   if (!position) {
-    Position.create({
+    position = Position.create({
       id,
       earned: '0',
-      avgExchangeRate: exchangeRate.toString(),
-      balance: amount.toString()
+      avgExchangeRate: '1000000000000000000',
+      balance: '0'
     })
-    return
   }
 
   const newBalance = new BN(position.balance).add(amount.toBn())
@@ -81,15 +85,21 @@ export async function handleSTokenIssued(event: SubstrateEvent) {
 }
 
 export async function handleSTokenBurned(event: SubstrateEvent) {
-  const assetId = event.event.data[0] as CurrencyId
+  const assetId = event.event.data[0] as AssetId
   if (!assetId.eq(liquidCurrency)) {
     return
   }
 
-  const id = event.event.data[1].toString()
+  const account = event.event.data[1] as AccountId
   const amount = event.event.data[2] as Balance
   const exchangeRate = (await api.query.liquidStaking.exchangeRate()) as Rate
 
+  await handleSellOrder(account, amount)
+}
+
+async function handleSellOrder(account: AccountId, amount: Balance) {
+  const id = account.toString()
+  const exchangeRate = (await api.query.liquidStaking.exchangeRate()) as Rate
   let position = await Position.get(id.toString())
   if (!position) return
 
@@ -108,63 +118,70 @@ export async function handleSTokenBurned(event: SubstrateEvent) {
 }
 
 export async function handleSTokenTransferred(event: SubstrateEvent) {
-  const assetId = event.event.data[0] as CurrencyId
+  const assetId = event.event.data[0] as AssetId
   if (!assetId.eq(liquidCurrency)) {
     return
   }
 
-  const from = event.event.data[1].toString()
-  const to = event.event.data[2].toString()
+  const from = event.event.data[1] as AccountId
+  const to = event.event.data[2] as AccountId
   const amount = event.event.data[3] as Balance
   const exchangeRate = (await api.query.liquidStaking.exchangeRate()) as Rate
   const loansAddress = createAddress('par/loan')
   const ammAddress = createAddress('par/ammp')
 
-  // TODO: handle this
   if (
-    from == loansAddress ||
-    to == loansAddress ||
-    from == ammAddress ||
-    to == ammAddress
+    from.toString() == loansAddress ||
+    to.toString() == loansAddress ||
+    from.toString() == ammAddress ||
+    to.toString() == ammAddress
   ) {
     return
   }
 
-  const fromPosition = await Position.get(from)
-  if (!fromPosition) {
+  await handleSellOrder(from, amount)
+  await handleBuyOrder(to, amount)
+}
+
+export async function handleSTokenTraded(event: SubstrateEvent) {
+  const account = event.event.data[0] as AccountId
+  const assetIdIn = event.event.data[1] as AssetId
+  const assetIdOut = event.event.data[2] as AssetId
+  const amountIn = event.event.data[3] as Balance
+  const amountOut = event.event.data[4] as Balance
+
+  if (!assetIdIn.eq(liquidCurrency) && !assetIdOut.eq(liquidCurrency)) {
     return
   }
 
-  const toPosition = await Position.get(to)
-  if (!toPosition) {
-    Position.create({
-      id: to,
-      earned: '0',
-      avgExchangeRate: exchangeRate.toString(),
-      balance: amount.toString()
-    })
+  const isSell = assetIdIn.eq(liquidCurrency)
+  if (isSell) {
+    await handleSellOrder(account, amountIn)
+  } else {
+    await handleBuyOrder(account, amountOut)
+  }
+}
+
+export async function handleSTokenBorrowed(event: SubstrateEvent) {
+  const account = event.event.data[0] as AccountId
+  const assetId = event.event.data[1] as AssetId
+  const amount = event.event.data[2] as Balance
+
+  if (!assetId.eq(liquidCurrency)) {
     return
   }
 
-  const newToBalance = new BN(toPosition.balance).add(amount.toBn())
-  toPosition.avgExchangeRate = new BN(toPosition.avgExchangeRate)
-    .mul(new BN(toPosition.balance))
-    .add(amount.toBn().mul(exchangeRate.toBn()))
-    .div(newToBalance)
-    .toString()
-  toPosition.balance = newToBalance.toString()
+  await handleBuyOrder(account, amount)
+}
 
-  const newFromEarned = exchangeRate
-    .toBn()
-    .sub(new BN(fromPosition.avgExchangeRate))
-    .mul(amount.toBn())
-    .div(new BN(1e18))
-    .add(new BN(fromPosition.earned))
-  const newFromBalance = new BN(fromPosition.balance).sub(amount.toBn())
+export async function handleSTokenRepaid(event: SubstrateEvent) {
+  const account = event.event.data[0] as AccountId
+  const assetId = event.event.data[1] as AssetId
+  const amount = event.event.data[2] as Balance
 
-  fromPosition.balance = newFromBalance.toString()
-  fromPosition.earned = newFromEarned.toString()
+  if (!assetId.eq(liquidCurrency)) {
+    return
+  }
 
-  await toPosition.save()
-  await fromPosition.save()
+  await handleSellOrder(account, amount)
 }

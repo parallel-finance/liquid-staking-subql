@@ -6,11 +6,11 @@ description: >-
 repository: 'https://github.com/parallel-finance/liquid-staking-subql'
 runner:
   node:
-    name: "@subql/node"
-    version: "1.0.0"
+    name: '@subql/node'
+    version: '1.0.0'
   query:
     name: '@subql/query'
-    version: '^0.12.0'
+    version: '1.0.0'
 schema:
   file: ./schema.graphql
 network:
@@ -63,3 +63,21 @@ dataSources:
           filter:
             module: assets
             method: Transferred
+
+        - handler: handleSTokenTraded
+          kind: substrate/EventHandler
+          filter:
+            module: amm
+            method: Traded
+
+        - handler: handleSTokenBorrowed
+          kind: substrate/EventHandler
+          filter:
+            module: loans
+            method: Borrowed
+
+        - handler: handleSTokenRepaid
+          kind: substrate/EventHandler
+          filter:
+            module: loans
+            method: RepaidBorrow
