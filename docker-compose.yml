@@ -9,11 +9,6 @@ services:
       - .data/postgres:/var/lib/postgresql/data
     environment:
       POSTGRES_PASSWORD: postgres
-    healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U postgres']
-      interval: 5s
-      timeout: 5s
-      retries: 5
 
   subquery-node:
     image: onfinality/subql-node:latest
@@ -31,11 +26,6 @@ services:
     command:
       - -f=/app
       - --db-schema=app
-    healthcheck:
-      test: ['CMD', 'curl', '-f', 'http://subquery-node:3000/ready']
-      interval: 3s
-      timeout: 5s
-      retries: 10
 
   graphql-engine:
     image: onfinality/subql-query:latest

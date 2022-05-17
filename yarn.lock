@@ -939,7 +939,7 @@
   resolved "https://registry.yarnpkg.com/@scure/base/-/base-1.0.0.tgz#109fb595021de285f05a7db6806f2f48296fcee7"
   integrity sha512-gIVaYhUsy+9s58m/ETjSJVKHhKTBMmcRb9cEV5/5dwvfDlfORjKrFsDeDHWRrm6RjcPvCLZFwGJjAjLj1gg4HA==
 
-"@subql/cli@1.0.0":
+"@subql/cli@latest":
   version "1.0.0"
   resolved "https://registry.npmmirror.com/@subql/cli/-/cli-1.0.0.tgz#f0fbf4918b19d127cc3afec006ce76441337e9bc"
   integrity sha512-JabdjVPanX4vWarZI5slwr5eIzRG3Ns9px+rztVRctYnsGyPLjfOqzH9l/9Nsvg1a72vykBBDkfNE1zi52D8dg==
@@ -1011,7 +1011,7 @@
   resolved "https://registry.yarnpkg.com/@subql/types-terra/-/types-terra-0.4.0.tgz#09f70e6b8820fa98b9bf2f6807cde4476a179d5f"
   integrity sha512-+Qx9tPCAQpIF0u4jSnW5GbjZoVdpt4GJpkIp4hDao3uUS6Vs68ZbtNQCl+EMP0eU7WTHJjwWmTflPvf665SYaw==
 
-"@subql/types@1.0.0":
+"@subql/types@1.0.0", "@subql/types@latest":
   version "1.0.0"
   resolved "https://registry.npmmirror.com/@subql/types/-/types-1.0.0.tgz#1f6d29f552effba474b35e3e83d41e27b1becac0"
   integrity sha512-UU6bvJp2JWfSTLArkl10fFIvJCZC3I+0/Swk8wn0Mnh+qNjhxPudS9FA7+qV2WIGZ9WNABqNq7KSpomGCiqeow==
