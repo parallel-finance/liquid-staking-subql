@@ -45,9 +45,3 @@ type Position @entity {
   avgExchangeRate: String!
   balance: String!
 }
-
-type Farming @entity {
-  id: ID!
-  claimed: String!
-  unclaimed: String!
-}

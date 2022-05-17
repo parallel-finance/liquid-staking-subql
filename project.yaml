@@ -7,15 +7,15 @@ repository: 'https://github.com/parallel-finance/liquid-staking-subql'
 runner:
   node:
     name: '@subql/node'
-    version: '1.0.0'
+    version: 'v1.0.0'
   query:
     name: '@subql/query'
-    version: '1.0.0'
+    version: 'v1.0.0'
 schema:
   file: ./schema.graphql
 network:
   endpoint: 'wss://regnet4-rpc.parallel.fi'
-  genesisHash: '0x62a81e71b66e51283294fb9bdce013bc31d1210f1867ef63fcdce77c3cc0b346'
+  chainId: '0x62a81e71b66e51283294fb9bdce013bc31d1210f1867ef63fcdce77c3cc0b346'
   chaintypes:
     file: ./dist/chaintypes.js
   dictionary: 'https://api.subquery.network/sq/subquery/parallel-dictionary'
