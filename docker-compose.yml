@@ -24,7 +24,7 @@ services:
     volumes:
       - ./:/app
     command:
-      - -f=/app
+      - -f=/app/${MANIFEST_FILE}
       - --db-schema=app
 
   graphql-engine:
