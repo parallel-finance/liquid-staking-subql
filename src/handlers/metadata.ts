@@ -25,10 +25,10 @@ const getCapBreakingApiBlockHeight = (): Promise<number> => {
     }
     const chain = lastRuntimeUpgrade.unwrap().specName.toString().toLowerCase()
 
-    if (chain.startsWith('parallel')) {
-      blockHeight = 0
+    if (chain.startsWith('heiko')) {
+      blockHeight = 1061270
     } else {
-      blockHeight = 1061270 // the runtime upgrade breaking change
+      blockHeight = 0 // the runtime upgrade breaking change
     }
     return blockHeight
   }
