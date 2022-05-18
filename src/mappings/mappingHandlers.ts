@@ -123,11 +123,15 @@ async function handleSellOrder(account: AccountId, amount: Balance) {
   let position = await StakingPosition.get(id.toString())
   if (!position || amount.eq(new BN(0))) return
 
-  const newBalance = new BN(position.balance).sub(amount.toBn())
+  const diff = new BN(position.balance).gt(amount.toBn())
+    ? amount.toBn()
+    : new BN(position.balance)
+
+  const newBalance = new BN(position.balance).sub(diff)
   const newEarned = exchangeRate
     .toBn()
     .sub(new BN(position.avgExchangeRate))
-    .mul(amount.toBn())
+    .mul(diff)
     .div(new BN(1e18))
     .add(new BN(position.earned))
 
