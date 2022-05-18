@@ -41,6 +41,7 @@ type Ledger @entity {
 
 type StakingPosition @entity {
   id: ID!
+  totalStaked: String!
   earned: String!
   avgExchangeRate: String!
   balance: String!

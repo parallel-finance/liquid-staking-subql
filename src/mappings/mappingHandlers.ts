@@ -18,6 +18,7 @@ export async function handleBlock(block: SubstrateBlock): Promise<void> {
 }
 
 export async function handleStakeEvent(event: SubstrateEvent) {
+  await handleTotalStaked(event)
   await updateMetadataTotalStakersAndStakingAction(event)
 }
 
@@ -59,6 +60,21 @@ export async function handleSTokenIssued(event: SubstrateEvent) {
   await handleBuyOrder(account, amount)
 }
 
+async function handleTotalStaked(event: SubstrateEvent) {
+  const id = event.event.data[0].toString()
+  const amount = event.event.data[1] as Balance
+
+  const position = await StakingPosition.get(id)
+  if (!position) {
+    return
+  }
+
+  position.totalStaked = new BN(position.totalStaked)
+    .add(amount.toBn())
+    .toString()
+  await position.save()
+}
+
 async function handleBuyOrder(account: AccountId, amount: Balance) {
   const id = account.toString()
   const exchangeRate = (await api.query.liquidStaking.exchangeRate()) as Rate
@@ -66,6 +82,7 @@ async function handleBuyOrder(account: AccountId, amount: Balance) {
   if (!position) {
     position = StakingPosition.create({
       id,
+      totalStaked: '0',
       earned: '0',
       avgExchangeRate: '1000000000000000000',
       balance: '0'
