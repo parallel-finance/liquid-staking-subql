@@ -1,0 +1,46 @@
+specVersion: 1.0.0
+name: parallel-liquid-staking-subql
+version: 1.0.0
+description: Subql service for Liquid-staking in the parallel network
+repository: "https://github.com/parallel-finance/liquid-staking-subql"
+runner:
+  node:
+    name: "@subql/node"
+    version: "1.0.0"
+  query:
+    name: "@subql/query"
+    version: "^0.12.0"
+schema:
+  file: ./schema.graphql
+network:
+  endpoint: "wss://rpc.parallel.fi"
+  genesisHash: "0xe61a41c53f5dcd0beb09df93b34402aada44cb05117b71059cce40a2723a4e97"
+  chaintypes:
+    file: ./dist/chaintypes.js
+  dictionary: "https://api.subquery.network/sq/subquery/parallel-dictionary"
+dataSources:
+  - kind: substrate/Runtime
+    startBlock: 895313
+    mapping:
+      file: ./dist/index.js
+      handlers:
+        - handler: handleBlock
+          kind: substrate/BlockHandler
+
+        - handler: handleStakeEvent
+          kind: substrate/EventHandler
+          filter:
+            module: liquidStaking
+            method: Staked
+
+        - handler: handleUnstakeEvent
+          kind: substrate/EventHandler
+          filter:
+            module: liquidStaking
+            method: Unstaked
+
+        - handler: handleUpdateLedger
+          kind: substrate/EventHandler
+          filter:
+            module: liquidStaking
+            method: StakingLedgerUpdated
