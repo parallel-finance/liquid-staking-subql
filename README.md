@@ -35,6 +35,21 @@ Finally, you should see a GraphQL playground is showing in the explorer and the 
         blockHash
       }
     }
+    stakingPositions(first: 5) {
+      nodes {
+        id
+        earned
+        avgExchangeRate
+        balance
+      }
+    }
+    farmingPositions(first: 5) {
+      nodes {
+        id
+        accrued
+        claimed
+      }
+    }
   }
 }
 ```
