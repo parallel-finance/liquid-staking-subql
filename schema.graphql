@@ -39,9 +39,15 @@ type Ledger @entity {
   unlocking: [LockingItem!]!
 }
 
-type Position @entity {
+type StakingPosition @entity {
   id: ID!
   earned: String!
   avgExchangeRate: String!
   balance: String!
+}
+
+type FarmingPosition @entity {
+  id: ID!
+  accrued: String!
+  claimed: String!
 }

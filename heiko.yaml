@@ -81,3 +81,15 @@ dataSources:
           filter:
             module: loans
             method: RepaidBorrow
+
+        - handler: handleSupplierRewardDistributed
+          kind: substrate/EventHandler
+          filter:
+            module: loans
+            method: DistributedSupplierReward
+
+        - handler: handleRewardPaid
+          kind: substrate/EventHandler
+          filter:
+            module: loans
+            method: RewardPaid

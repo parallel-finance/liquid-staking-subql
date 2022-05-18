@@ -1,7 +1,7 @@
 import { SubstrateEvent, SubstrateBlock } from '@subql/types'
 import { PalletStakingStakingLedger } from '@polkadot/types/lookup'
 import { stakingCurrency, liquidCurrency } from '../constants'
-import { Ledger, Position } from '../types'
+import { Ledger, StakingPosition, FarmingPosition } from '../types'
 import { BN } from '@polkadot/util'
 import { AccountId } from '@polkadot/types/interfaces'
 import { Rate, Balance, AssetId } from '@parallel-finance/types/interfaces'
@@ -62,9 +62,9 @@ export async function handleSTokenIssued(event: SubstrateEvent) {
 async function handleBuyOrder(account: AccountId, amount: Balance) {
   const id = account.toString()
   const exchangeRate = (await api.query.liquidStaking.exchangeRate()) as Rate
-  let position = await Position.get(id)
+  let position = await StakingPosition.get(id)
   if (!position) {
-    position = Position.create({
+    position = StakingPosition.create({
       id,
       earned: '0',
       avgExchangeRate: '1000000000000000000',
@@ -100,7 +100,7 @@ export async function handleSTokenBurned(event: SubstrateEvent) {
 async function handleSellOrder(account: AccountId, amount: Balance) {
   const id = account.toString()
   const exchangeRate = (await api.query.liquidStaking.exchangeRate()) as Rate
-  let position = await Position.get(id.toString())
+  let position = await StakingPosition.get(id.toString())
   if (!position) return
 
   const newBalance = new BN(position.balance).sub(amount.toBn())
@@ -184,4 +184,47 @@ export async function handleSTokenRepaid(event: SubstrateEvent) {
   }
 
   await handleSellOrder(account, amount)
+}
+
+export async function handleSupplierRewardDistributed(event: SubstrateEvent) {
+  const assetId = event.event.data[0] as AssetId
+  const supplier = event.event.data[1] as AccountId
+  const rewardDelta = event.event.data[2] as Balance
+
+  if (!assetId.eq(liquidCurrency)) {
+    return
+  }
+
+  const id = supplier.toString()
+  let farmingPosition = await FarmingPosition.get(id)
+  if (!farmingPosition) {
+    farmingPosition = FarmingPosition.create({
+      id,
+      accrued: '0',
+      claimed: '0'
+    })
+  }
+
+  farmingPosition.accrued = new BN(farmingPosition.accrued)
+    .add(rewardDelta.toBn())
+    .toString()
+
+  await farmingPosition.save()
+}
+
+export async function handleRewardPaid(event: SubstrateEvent) {
+  const supplier = event.event.data[0] as AccountId
+
+  const id = supplier.toString()
+  const farmingPosition = await FarmingPosition.get(id)
+  if (!farmingPosition) {
+    return
+  }
+
+  farmingPosition.claimed = new BN(farmingPosition.claimed)
+    .add(new BN(farmingPosition.accrued))
+    .toString()
+  farmingPosition.accrued = '0'
+
+  await farmingPosition.save()
 }
