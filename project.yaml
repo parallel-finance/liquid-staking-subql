@@ -70,6 +70,18 @@ dataSources:
             module: amm
             method: Traded
 
+        - handler: handleLiquidityAdded
+          kind: substrate/EventHandler
+          filter:
+            module: amm
+            method: LiquidityAdded
+
+        - handler: handleLiquidityRemoved
+          kind: substrate/EventHandler
+          filter:
+            module: amm
+            method: LiquidityRemoved
+
         - handler: handleSTokenBorrowed
           kind: substrate/EventHandler
           filter:

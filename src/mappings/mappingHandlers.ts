@@ -76,6 +76,9 @@ async function handleTotalStaked(event: SubstrateEvent) {
 }
 
 async function handleBuyOrder(account: AccountId, amount: Balance) {
+  if (amount.eq(new BN(0))) {
+    return
+  }
   const id = account.toString()
   const exchangeRate = (await api.query.liquidStaking.exchangeRate()) as Rate
   let position = await StakingPosition.get(id)
@@ -118,7 +121,7 @@ async function handleSellOrder(account: AccountId, amount: Balance) {
   const id = account.toString()
   const exchangeRate = (await api.query.liquidStaking.exchangeRate()) as Rate
   let position = await StakingPosition.get(id.toString())
-  if (!position) return
+  if (!position || amount.eq(new BN(0))) return
 
   const newBalance = new BN(position.balance).sub(amount.toBn())
   const newEarned = exchangeRate
@@ -244,4 +247,44 @@ export async function handleRewardPaid(event: SubstrateEvent) {
   farmingPosition.accrued = '0'
 
   await farmingPosition.save()
+}
+
+export async function handleLiquidityAdded(event: SubstrateEvent) {
+  const account = event.event.data[0] as AccountId
+  const baseAsset = event.event.data[1] as AssetId
+  const quoteAsset = event.event.data[2] as AssetId
+  const baseAmount = event.event.data[3] as Balance
+  const quoteAmount = event.event.data[4] as Balance
+
+  if (!baseAsset.eq(liquidCurrency) && !quoteAsset.eq(liquidCurrency)) {
+    return
+  }
+
+  if (baseAsset.eq(liquidCurrency)) {
+    await handleSellOrder(account, baseAmount)
+  }
+
+  if (quoteAsset.eq(liquidCurrency)) {
+    await handleSellOrder(account, quoteAmount)
+  }
+}
+
+export async function handleLiquidityRemoved(event: SubstrateEvent) {
+  const account = event.event.data[0] as AccountId
+  const baseAsset = event.event.data[1] as AssetId
+  const quoteAsset = event.event.data[2] as AssetId
+  const baseAmount = event.event.data[3] as Balance
+  const quoteAmount = event.event.data[4] as Balance
+
+  if (!baseAsset.eq(liquidCurrency) && !quoteAsset.eq(liquidCurrency)) {
+    return
+  }
+
+  if (baseAsset.eq(liquidCurrency)) {
+    await handleBuyOrder(account, baseAmount)
+  }
+
+  if (quoteAsset.eq(liquidCurrency)) {
+    await handleBuyOrder(account, quoteAmount)
+  }
 }
