@@ -43,6 +43,7 @@ type StakingPosition @entity {
   id: ID!
   totalStaked: String!
   totalEarned: String!
+  lending: String!
   avgExchangeRate: String!
   balance: String!
 }

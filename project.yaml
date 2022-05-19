@@ -82,6 +82,18 @@ dataSources:
             module: amm
             method: LiquidityRemoved
 
+        - handler: handleSTokenDeposited
+          kind: substrate/EventHandler
+          filter:
+            module: loans
+            method: Deposited
+
+        - handler: handleSTokenRedeemed
+          kind: substrate/EventHandler
+          filter:
+            module: loans
+            method: Redeemed
+
         - handler: handleSTokenBorrowed
           kind: substrate/EventHandler
           filter:
@@ -93,6 +105,12 @@ dataSources:
           filter:
             module: loans
             method: RepaidBorrow
+
+        - handler: handleSTokenLiquidatedBorrow
+          kind: substrate/EventHandler
+          filter:
+            module: loans
+            method: LiquidatedBorrow
 
         - handler: handleSupplierRewardDistributed
           kind: substrate/EventHandler
