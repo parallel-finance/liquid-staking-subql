@@ -1,5 +1,5 @@
-import { derivativeIndexList } from "../constants";
-import { Ledger } from "../types";
+import { derivativeIndexList } from '../constants'
+import { Ledger } from '../types'
 
 export function updateLedgerBlockHeight(height: number) {
   Promise.all(
@@ -8,8 +8,8 @@ export function updateLedgerBlockHeight(height: number) {
     ledgers
       .filter((ledger) => !!ledger)
       .forEach(async (ledger) => {
-        ledger.blockHeight = height;
-        await ledger.save();
-      });
-  });
+        ledger.blockHeight = height
+        await ledger.save()
+      })
+  })
 }

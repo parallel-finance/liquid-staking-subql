@@ -1,8 +1,7 @@
 specVersion: 1.0.0
-name: heiko-liquid-staking-subql
+name: parallel-liquid-staking-subql
 version: 1.0.0
-description: >-
-  Subql service for Liquid-staking in the heiko network
+description: Subql service for Liquid-staking in the parallel network
 repository: 'https://github.com/parallel-finance/liquid-staking-subql'
 runner:
   node:
@@ -14,14 +13,14 @@ runner:
 schema:
   file: ./schema.graphql
 network:
-  endpoint: 'wss://regnet4-rpc.parallel.fi'
-  chainId: '0x62a81e71b66e51283294fb9bdce013bc31d1210f1867ef63fcdce77c3cc0b346'
-  dictionary: ''
+  endpoint: 'wss://rpc.parallel.fi'
+  chainId: '0xe61a41c53f5dcd0beb09df93b34402aada44cb05117b71059cce40a2723a4e97'
   chaintypes:
     file: ./dist/chaintypes.js
+  dictionary: 'https://api.subquery.network/sq/subquery/parallel-dictionary'
 dataSources:
   - kind: substrate/Runtime
-    startBlock: 3653
+    startBlock: 895313
     mapping:
       file: ./dist/index.js
       handlers:

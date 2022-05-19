@@ -18,24 +18,39 @@ Finally, you should see a GraphQL playground is showing in the explorer and the 
 
 ```graphql
 {
-    query {
-        ledgers (first: 5) {
-            nodes {
-                id
-                assetId
-                blockHeight
-                total
-            }
-        }
-        metadata (first: 5) {
-            nodes {
-                id
-                stakingAssetId
-                liquidAssetId
-                blockHash
-            }
-        }
+  query {
+    ledgers(first: 5) {
+      nodes {
+        id
+        assetId
+        blockHeight
+        total
+      }
     }
+    metadata(first: 5) {
+      nodes {
+        id
+        stakingAssetId
+        liquidAssetId
+        blockHash
+      }
+    }
+    stakingPositions(first: 5) {
+      nodes {
+        id
+        earned
+        avgExchangeRate
+        balance
+      }
+    }
+    farmingPositions(first: 5) {
+      nodes {
+        id
+        accrued
+        claimed
+      }
+    }
+  }
 }
 ```
 
@@ -49,12 +64,11 @@ Before do the deployment, make sure run `yarn build` successfully. And please ch
 
 Need to prepare your [SUBQL_ACCESS_TOKEN](https://doc.subquery.network/publish/ipfs/#prepare-your-subql-access-token) before call actions.
 
-- For Parallel: Click `Run workflow` on [Deploy with Parallel RPC](https://github.com/parallel-finance/liquid-staking-subql/actions/workflows/deploy-parallel.yml) action, and enter the `SUBQL_ACCESS_TOKEN`, then click the button again.
-- For Heiko: Click `Run workflow` on [Deploy with Heiko RPC](https://github.com/parallel-finance/liquid-staking-subql/actions/workflows/deploy-heiko.yml) action, and enter the `SUBQL_ACCESS_TOKEN`, then click the button again.
+- For Deployment: Click `Run workflow` on [Deploy with Parallel RPC](https://github.com/parallel-finance/liquid-staking-subql/actions/workflows/deploy.yml) action, and enter the `SUBQL_ACCESS_TOKEN`, then click the button again.
 
 ### Get IPFS CID from github action
 
-The check the response in deployment action `Publish to IPFS` step, for [example](https://github.com/parallel-finance/liquid-staking-subql/runs/5879173033?check_suite_focus=true ), there should be as following:
+The check the response in deployment action `Publish to IPFS` step, for [example](https://github.com/parallel-finance/liquid-staking-subql/runs/5879173033?check_suite_focus=true), there should be as following:
 
 ```
 Building and packing code... done
