@@ -18,7 +18,6 @@ export async function handleBlock(block: SubstrateBlock): Promise<void> {
 }
 
 export async function handleStakeEvent(event: SubstrateEvent) {
-  await handleTotalStaked(event)
   await updateMetadataTotalStakersAndStakingAction(event)
 }
 
@@ -49,6 +48,8 @@ export async function handleUpdateLedger(event: SubstrateEvent) {
 }
 
 export async function handleSTokenIssued(event: SubstrateEvent) {
+  // TODO: ignore crosschain for now, then this happens
+  // only when users stake
   const assetId = event.event.data[0] as AssetId
   if (!assetId.eq(liquidCurrency)) {
     return
@@ -57,25 +58,14 @@ export async function handleSTokenIssued(event: SubstrateEvent) {
   const account = event.event.data[1] as AccountId
   const amount = event.event.data[2] as Balance
 
-  await handleBuyOrder(account, amount)
+  await handleBuyOrder(account, amount, true)
 }
 
-async function handleTotalStaked(event: SubstrateEvent) {
-  const id = event.event.data[0].toString()
-  const amount = event.event.data[1] as Balance
-
-  const position = await StakingPosition.get(id)
-  if (!position) {
-    return
-  }
-
-  position.totalStaked = new BN(position.totalStaked)
-    .add(amount.toBn())
-    .toString()
-  await position.save()
-}
-
-async function handleBuyOrder(account: AccountId, amount: Balance) {
+async function handleBuyOrder(
+  account: AccountId,
+  amount: Balance,
+  fromStake: boolean = false
+) {
   if (amount.eq(new BN(0))) {
     return
   }
@@ -86,25 +76,32 @@ async function handleBuyOrder(account: AccountId, amount: Balance) {
     position = StakingPosition.create({
       id,
       totalStaked: '0',
-      earned: '0',
+      totalEarned: '0',
       avgExchangeRate: '1000000000000000000',
       balance: '0'
     })
   }
 
   const newBalance = new BN(position.balance).add(amount.toBn())
-  const newAvgExchangeRate = new BN(position.avgExchangeRate)
-    .mul(new BN(position.balance))
-    .add(amount.toBn().mul(exchangeRate.toBn()))
-    .div(newBalance)
-
   position.balance = newBalance.toString()
-  position.avgExchangeRate = newAvgExchangeRate.toString()
+
+  if (fromStake) {
+    const newAvgExchangeRate = new BN(position.avgExchangeRate)
+      .mul(new BN(position.balance))
+      .add(amount.toBn().mul(exchangeRate.toBn()))
+      .div(newBalance)
+    position.totalStaked = new BN(position.totalStaked)
+      .add(amount.toBn())
+      .toString()
+    position.avgExchangeRate = newAvgExchangeRate.toString()
+  }
 
   await position.save()
 }
 
 export async function handleSTokenBurned(event: SubstrateEvent) {
+  // TODO: ignore crosschain for now, then this happens
+  // only when users unstake
   const assetId = event.event.data[0] as AssetId
   if (!assetId.eq(liquidCurrency)) {
     return
@@ -112,12 +109,15 @@ export async function handleSTokenBurned(event: SubstrateEvent) {
 
   const account = event.event.data[1] as AccountId
   const amount = event.event.data[2] as Balance
-  const exchangeRate = (await api.query.liquidStaking.exchangeRate()) as Rate
 
-  await handleSellOrder(account, amount)
+  await handleSellOrder(account, amount, true)
 }
 
-async function handleSellOrder(account: AccountId, amount: Balance) {
+async function handleSellOrder(
+  account: AccountId,
+  amount: Balance,
+  fromUnstake: boolean = false
+) {
   const id = account.toString()
   const exchangeRate = (await api.query.liquidStaking.exchangeRate()) as Rate
   let position = await StakingPosition.get(id.toString())
@@ -127,16 +127,16 @@ async function handleSellOrder(account: AccountId, amount: Balance) {
     ? amount.toBn()
     : new BN(position.balance)
 
-  const newBalance = new BN(position.balance).sub(diff)
-  const newEarned = exchangeRate
-    .toBn()
-    .sub(new BN(position.avgExchangeRate))
-    .mul(diff)
-    .div(new BN(1e18))
-    .add(new BN(position.earned))
-
-  position.balance = newBalance.toString()
-  position.earned = newEarned.toString()
+  position.balance = new BN(position.balance).sub(diff).toString()
+  if (fromUnstake) {
+    const newTotalEarned = exchangeRate
+      .toBn()
+      .sub(new BN(position.avgExchangeRate))
+      .mul(diff)
+      .div(new BN(1e18))
+      .add(new BN(position.totalEarned))
+    position.totalEarned = newTotalEarned.toString()
+  }
 
   await position.save()
 }
