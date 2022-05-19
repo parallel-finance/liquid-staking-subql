@@ -77,6 +77,7 @@ async function handleBuyOrder(
       id,
       totalStaked: '0',
       totalEarned: '0',
+      lending: '0',
       avgExchangeRate: '1000000000000000000',
       balance: '0'
     })
@@ -87,9 +88,9 @@ async function handleBuyOrder(
 
   if (fromStake) {
     const newAvgExchangeRate = new BN(position.avgExchangeRate)
-      .mul(new BN(position.balance))
+      .mul(new BN(position.balance).add(new BN(position.lending)))
       .add(amount.toBn().mul(exchangeRate.toBn()))
-      .div(newBalance)
+      .div(newBalance.add(new BN(position.lending)))
     position.totalStaked = new BN(position.totalStaked)
       .add(amount.toBn())
       .toString()
@@ -186,6 +187,54 @@ export async function handleSTokenTraded(event: SubstrateEvent) {
   }
 }
 
+export async function handleSTokenDeposited(event: SubstrateEvent) {
+  const account = event.event.data[0] as AccountId
+  const assetId = event.event.data[1] as AssetId
+  const amount = event.event.data[2] as Balance
+
+  if (!assetId.eq(liquidCurrency)) {
+    return
+  }
+
+  const id = account.toString()
+  let position = await StakingPosition.get(id)
+  if (!position) {
+    return
+  }
+
+  position.lending = new BN(position.lending).add(amount.toBn()).toString()
+  position.balance = new BN(position.balance).sub(amount.toBn()).toString()
+
+  await position.save()
+}
+
+export async function handleSTokenRedeemed(event: SubstrateEvent) {
+  const account = event.event.data[0] as AccountId
+  const assetId = event.event.data[1] as AssetId
+  const amount = event.event.data[2] as Balance
+
+  if (!assetId.eq(liquidCurrency)) {
+    return
+  }
+
+  const id = account.toString()
+  let position = await StakingPosition.get(id)
+  if (!position) {
+    return
+  }
+
+  // TODO: supply APY may cause this to underflow
+  position.lending = (
+    new BN(position.lending).gt(amount.toBn())
+      ? new BN(position.lending).sub(amount.toBn())
+      : new BN(0)
+  ).toString()
+
+  position.balance = new BN(position.balance).add(amount.toBn()).toString()
+
+  await position.save()
+}
+
 export async function handleSTokenBorrowed(event: SubstrateEvent) {
   const account = event.event.data[0] as AccountId
   const assetId = event.event.data[1] as AssetId
@@ -208,6 +257,31 @@ export async function handleSTokenRepaid(event: SubstrateEvent) {
   }
 
   await handleSellOrder(account, amount)
+}
+
+export async function handleSTokenLiquidatedBorrow(event: SubstrateEvent) {
+  const account = event.event.data[1] as AccountId
+  const assetId = event.event.data[3] as AssetId
+  const amount = event.event.data[5] as Balance
+
+  if (!assetId.eq(liquidCurrency)) {
+    return
+  }
+
+  const id = account.toString()
+  let position = await StakingPosition.get(id)
+  if (!position) {
+    return
+  }
+
+  // TODO: supply APY may cause this to underflow
+  position.lending = (
+    new BN(position.lending).gt(amount.toBn())
+      ? new BN(position.lending).sub(amount.toBn())
+      : new BN(0)
+  ).toString()
+
+  await position.save()
 }
 
 export async function handleSupplierRewardDistributed(event: SubstrateEvent) {
