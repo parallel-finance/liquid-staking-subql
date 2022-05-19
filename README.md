@@ -38,7 +38,8 @@ Finally, you should see a GraphQL playground is showing in the explorer and the 
     stakingPositions(first: 5) {
       nodes {
         id
-        earned
+        totalStaked
+        totalEarned
         avgExchangeRate
         balance
       }
