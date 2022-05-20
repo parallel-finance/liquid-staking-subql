@@ -84,7 +84,6 @@ async function handleBuyOrder(
   }
 
   const newBalance = new BN(position.balance).add(amount.toBn())
-  position.balance = newBalance.toString()
 
   if (fromStake) {
     const newAvgExchangeRate = new BN(position.avgExchangeRate)
@@ -96,6 +95,8 @@ async function handleBuyOrder(
       .toString()
     position.avgExchangeRate = newAvgExchangeRate.toString()
   }
+
+  position.balance = newBalance.toString()
 
   await position.save()
 }
