@@ -57,13 +57,15 @@ export async function handleSTokenIssued(event: SubstrateEvent) {
 
   const account = event.event.data[1] as AccountId
   const amount = event.event.data[2] as Balance
+  const blockHeight = event.block.block.header.number.toNumber()
 
-  await handleBuyOrder(account, amount, true)
+  await handleBuyOrder(account, amount, blockHeight, true)
 }
 
 async function handleBuyOrder(
   account: AccountId,
   amount: Balance,
+  blockHeight: number,
   fromStake: boolean = false
 ) {
   if (amount.eq(new BN(0))) {
@@ -79,7 +81,8 @@ async function handleBuyOrder(
       totalEarned: '0',
       lending: '0',
       avgExchangeRate: '1000000000000000000',
-      balance: '0'
+      balance: '0',
+      blockHeight
     })
   }
 
@@ -97,6 +100,7 @@ async function handleBuyOrder(
   }
 
   position.balance = newBalance.toString()
+  position.blockHeight = blockHeight
 
   await position.save()
 }
@@ -111,13 +115,15 @@ export async function handleSTokenBurned(event: SubstrateEvent) {
 
   const account = event.event.data[1] as AccountId
   const amount = event.event.data[2] as Balance
+  const blockHeight = event.block.block.header.number.toNumber()
 
-  await handleSellOrder(account, amount, true)
+  await handleSellOrder(account, amount, blockHeight, true)
 }
 
 async function handleSellOrder(
   account: AccountId,
   amount: Balance,
+  blockHeight: number,
   fromUnstake: boolean = false
 ) {
   const id = account.toString()
@@ -129,16 +135,17 @@ async function handleSellOrder(
     ? amount.toBn()
     : new BN(position.balance)
 
-  position.balance = new BN(position.balance).sub(diff).toString()
   if (fromUnstake) {
     const newTotalEarned = exchangeRate
       .toBn()
       .sub(new BN(position.avgExchangeRate))
       .mul(diff)
-      .div(new BN(1e18))
+      .div(new BN('1000000000000000000'))
       .add(new BN(position.totalEarned))
     position.totalEarned = newTotalEarned.toString()
   }
+  position.balance = new BN(position.balance).sub(diff).toString()
+  position.blockHeight = blockHeight
 
   await position.save()
 }
@@ -153,6 +160,7 @@ export async function handleSTokenTransferred(event: SubstrateEvent) {
   const to = event.event.data[2] as AccountId
   const amount = event.event.data[3] as Balance
   const exchangeRate = (await api.query.liquidStaking.exchangeRate()) as Rate
+  const blockHeight = event.block.block.header.number.toNumber()
   const loansAddress = createAddress('par/loan')
   const ammAddress = createAddress('par/ammp')
 
@@ -165,8 +173,8 @@ export async function handleSTokenTransferred(event: SubstrateEvent) {
     return
   }
 
-  await handleSellOrder(from, amount)
-  await handleBuyOrder(to, amount)
+  await handleSellOrder(from, amount, blockHeight)
+  await handleBuyOrder(to, amount, blockHeight)
 }
 
 export async function handleSTokenTraded(event: SubstrateEvent) {
@@ -175,6 +183,7 @@ export async function handleSTokenTraded(event: SubstrateEvent) {
   const assetIdOut = event.event.data[2] as AssetId
   const amountIn = event.event.data[3] as Balance
   const amountOut = event.event.data[4] as Balance
+  const blockHeight = event.block.block.header.number.toNumber()
 
   if (!assetIdIn.eq(liquidCurrency) && !assetIdOut.eq(liquidCurrency)) {
     return
@@ -182,9 +191,9 @@ export async function handleSTokenTraded(event: SubstrateEvent) {
 
   const isSell = assetIdIn.eq(liquidCurrency)
   if (isSell) {
-    await handleSellOrder(account, amountIn)
+    await handleSellOrder(account, amountIn, blockHeight)
   } else {
-    await handleBuyOrder(account, amountOut)
+    await handleBuyOrder(account, amountOut, blockHeight)
   }
 }
 
@@ -192,6 +201,7 @@ export async function handleSTokenDeposited(event: SubstrateEvent) {
   const account = event.event.data[0] as AccountId
   const assetId = event.event.data[1] as AssetId
   const amount = event.event.data[2] as Balance
+  const blockHeight = event.block.block.header.number.toNumber()
 
   if (!assetId.eq(liquidCurrency)) {
     return
@@ -205,6 +215,7 @@ export async function handleSTokenDeposited(event: SubstrateEvent) {
 
   position.lending = new BN(position.lending).add(amount.toBn()).toString()
   position.balance = new BN(position.balance).sub(amount.toBn()).toString()
+  position.blockHeight = blockHeight
 
   await position.save()
 }
@@ -213,6 +224,7 @@ export async function handleSTokenRedeemed(event: SubstrateEvent) {
   const account = event.event.data[0] as AccountId
   const assetId = event.event.data[1] as AssetId
   const amount = event.event.data[2] as Balance
+  const blockHeight = event.block.block.header.number.toNumber()
 
   if (!assetId.eq(liquidCurrency)) {
     return
@@ -232,6 +244,7 @@ export async function handleSTokenRedeemed(event: SubstrateEvent) {
   ).toString()
 
   position.balance = new BN(position.balance).add(amount.toBn()).toString()
+  position.blockHeight = blockHeight
 
   await position.save()
 }
@@ -240,30 +253,33 @@ export async function handleSTokenBorrowed(event: SubstrateEvent) {
   const account = event.event.data[0] as AccountId
   const assetId = event.event.data[1] as AssetId
   const amount = event.event.data[2] as Balance
+  const blockHeight = event.block.block.header.number.toNumber()
 
   if (!assetId.eq(liquidCurrency)) {
     return
   }
 
-  await handleBuyOrder(account, amount)
+  await handleBuyOrder(account, amount, blockHeight)
 }
 
 export async function handleSTokenRepaid(event: SubstrateEvent) {
   const account = event.event.data[0] as AccountId
   const assetId = event.event.data[1] as AssetId
   const amount = event.event.data[2] as Balance
+  const blockHeight = event.block.block.header.number.toNumber()
 
   if (!assetId.eq(liquidCurrency)) {
     return
   }
 
-  await handleSellOrder(account, amount)
+  await handleSellOrder(account, amount, blockHeight)
 }
 
 export async function handleSTokenLiquidatedBorrow(event: SubstrateEvent) {
   const account = event.event.data[1] as AccountId
   const assetId = event.event.data[3] as AssetId
   const amount = event.event.data[5] as Balance
+  const blockHeight = event.block.block.header.number.toNumber()
 
   if (!assetId.eq(liquidCurrency)) {
     return
@@ -281,6 +297,7 @@ export async function handleSTokenLiquidatedBorrow(event: SubstrateEvent) {
       ? new BN(position.lending).sub(amount.toBn())
       : new BN(0)
   ).toString()
+  position.blockHeight = blockHeight
 
   await position.save()
 }
@@ -289,6 +306,7 @@ export async function handleSupplierRewardDistributed(event: SubstrateEvent) {
   const assetId = event.event.data[0] as AssetId
   const supplier = event.event.data[1] as AccountId
   const rewardDelta = event.event.data[2] as Balance
+  const blockHeight = event.block.block.header.number.toNumber()
 
   if (!assetId.eq(liquidCurrency)) {
     return
@@ -300,19 +318,22 @@ export async function handleSupplierRewardDistributed(event: SubstrateEvent) {
     farmingPosition = FarmingPosition.create({
       id,
       accrued: '0',
-      claimed: '0'
+      claimed: '0',
+      blockHeight
     })
   }
 
   farmingPosition.accrued = new BN(farmingPosition.accrued)
     .add(rewardDelta.toBn())
     .toString()
+  farmingPosition.blockHeight = blockHeight
 
   await farmingPosition.save()
 }
 
 export async function handleRewardPaid(event: SubstrateEvent) {
   const supplier = event.event.data[0] as AccountId
+  const blockHeight = event.block.block.header.number.toNumber()
 
   const id = supplier.toString()
   const farmingPosition = await FarmingPosition.get(id)
@@ -324,6 +345,7 @@ export async function handleRewardPaid(event: SubstrateEvent) {
     .add(new BN(farmingPosition.accrued))
     .toString()
   farmingPosition.accrued = '0'
+  farmingPosition.blockHeight = blockHeight
 
   await farmingPosition.save()
 }
@@ -334,17 +356,18 @@ export async function handleLiquidityAdded(event: SubstrateEvent) {
   const quoteAsset = event.event.data[2] as AssetId
   const baseAmount = event.event.data[3] as Balance
   const quoteAmount = event.event.data[4] as Balance
+  const blockHeight = event.block.block.header.number.toNumber()
 
   if (!baseAsset.eq(liquidCurrency) && !quoteAsset.eq(liquidCurrency)) {
     return
   }
 
   if (baseAsset.eq(liquidCurrency)) {
-    await handleSellOrder(account, baseAmount)
+    await handleSellOrder(account, baseAmount, blockHeight)
   }
 
   if (quoteAsset.eq(liquidCurrency)) {
-    await handleSellOrder(account, quoteAmount)
+    await handleSellOrder(account, quoteAmount, blockHeight)
   }
 }
 
@@ -354,16 +377,17 @@ export async function handleLiquidityRemoved(event: SubstrateEvent) {
   const quoteAsset = event.event.data[2] as AssetId
   const baseAmount = event.event.data[3] as Balance
   const quoteAmount = event.event.data[4] as Balance
+  const blockHeight = event.block.block.header.number.toNumber()
 
   if (!baseAsset.eq(liquidCurrency) && !quoteAsset.eq(liquidCurrency)) {
     return
   }
 
   if (baseAsset.eq(liquidCurrency)) {
-    await handleBuyOrder(account, baseAmount)
+    await handleBuyOrder(account, baseAmount, blockHeight)
   }
 
   if (quoteAsset.eq(liquidCurrency)) {
-    await handleBuyOrder(account, quoteAmount)
+    await handleBuyOrder(account, quoteAmount, blockHeight)
   }
 }
