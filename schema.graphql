@@ -46,10 +46,12 @@ type StakingPosition @entity {
   lending: String!
   avgExchangeRate: String!
   balance: String!
+  blockHeight: Int! @index(unique: false)
 }
 
 type FarmingPosition @entity {
   id: ID!
   accrued: String!
   claimed: String!
+  blockHeight: Int! @index(unique: false)
 }
