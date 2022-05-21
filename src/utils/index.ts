@@ -1,4 +1,4 @@
-import { AssetId } from '@parallel-finance/types/interfaces'
+import { AccountId, AssetId } from '@parallel-finance/types/interfaces'
 import { encodeAddress } from '@polkadot/keyring'
 import { stringToU8a, bnToU8a, u8aConcat } from '@polkadot/util'
 import { blake2AsU8a, decodeAddress } from '@polkadot/util-crypto'
@@ -31,4 +31,8 @@ export const farmingPoolAccountId = (assetId: number): string => {
     256
   )
   return encodeAddress(entropy)
+}
+
+export const toSubstrateAddress = (a: AccountId): string => {
+  return encodeAddress(decodeAddress(a.toString(), false), 42)
 }

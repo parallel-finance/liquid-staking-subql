@@ -12,7 +12,11 @@ import {
   updateStakingAction,
   updateBlockMetadatas
 } from '../handlers'
-import { createAddress, farmingPoolAccountId } from '../utils'
+import {
+  createAddress,
+  farmingPoolAccountId,
+  toSubstrateAddress
+} from '../utils'
 
 export async function handleBlock(block: SubstrateBlock): Promise<void> {
   await updateBlockMetadatas(block)
@@ -83,7 +87,7 @@ async function handleBuyOrder(
       totalEarned: '0',
       lending: '0',
       farming: '0',
-      avgExchangeRate: '1000000000000000000',
+      avgExchangeRate: exchangeRate.toString(),
       balance: '0',
       blockHeight
     })
@@ -168,23 +172,21 @@ export async function handleSTokenTransferred(event: SubstrateEvent) {
 
   const from = event.event.data[1] as AccountId
   const to = event.event.data[2] as AccountId
+  const fromSubstrateFmt = toSubstrateAddress(from)
+  const toSubstrateFmt = toSubstrateAddress(to)
   const amount = event.event.data[3] as Balance
   const exchangeRate = (await api.query.liquidStaking.exchangeRate()) as Rate
   const blockHeight = event.block.block.header.number.toNumber()
-  const loansAddress = createAddress('par/loan')
-  const ammAddress = createAddress('par/ammp')
-  const liquidStakingAddress = createAddress('par/lqsk')
-  const farmingPoolAddress = farmingPoolAccountId(assetId.toNumber())
+  const moduleAddresses = [
+    createAddress('par/loan'),
+    createAddress('par/ammp'),
+    createAddress('par/lqsk'),
+    farmingPoolAccountId(assetId.toNumber())
+  ]
 
   if (
-    from.toString() == loansAddress ||
-    to.toString() == loansAddress ||
-    from.toString() == ammAddress ||
-    to.toString() == ammAddress ||
-    from.toString() == liquidStakingAddress ||
-    to.toString() == liquidStakingAddress ||
-    from.toString() == farmingPoolAddress ||
-    to.toString() == farmingPoolAddress
+    moduleAddresses.includes(fromSubstrateFmt) ||
+    moduleAddresses.includes(toSubstrateFmt)
   ) {
     return
   }
