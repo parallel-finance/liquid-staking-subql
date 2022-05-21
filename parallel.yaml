@@ -122,3 +122,21 @@ dataSources:
           filter:
             module: loans
             method: RewardPaid
+
+        - handler: handleFarmingRewardPaid
+          kind: substrate/EventHandler
+          filter:
+            module: farming
+            method: RewardPaid
+
+        - handler: handleFarmingDeposited
+          kind: substrate/EventHandler
+          filter:
+            module: farming
+            method: AssetsDeposited
+
+        - handler: handleFarmingWithdrew
+          kind: substrate/EventHandler
+          filter:
+            module: farming
+            method: AssetsWithdrew

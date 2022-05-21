@@ -44,6 +44,7 @@ type StakingPosition @entity {
   totalStaked: String!
   totalEarned: String!
   lending: String!
+  farming: String!
   avgExchangeRate: String!
   balance: String!
   blockHeight: Int! @index(unique: false)
