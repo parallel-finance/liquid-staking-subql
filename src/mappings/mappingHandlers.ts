@@ -5,6 +5,7 @@ import { Ledger, StakingPosition, FarmingPosition } from '../types'
 import { BN } from '@polkadot/util'
 import { AccountId } from '@polkadot/types/interfaces'
 import { Rate, Balance, AssetId } from '@parallel-finance/types/interfaces'
+import { Extrinsic } from '@polkadot/types/interfaces'
 import {
   updateMetadataTotalStakersAndStakingAction,
   updateMetadataTotalLocked,
@@ -48,18 +49,19 @@ export async function handleUpdateLedger(event: SubstrateEvent) {
 }
 
 export async function handleSTokenIssued(event: SubstrateEvent) {
-  // TODO: ignore crosschain for now, then this happens
-  // only when users stake
   const assetId = event.event.data[0] as AssetId
   if (!assetId.eq(liquidCurrency)) {
     return
   }
 
+  const fromStake =
+    event.extrinsic &&
+    checkTransaction('liquidStaking', 'stake', event.extrinsic.extrinsic)
   const account = event.event.data[1] as AccountId
   const amount = event.event.data[2] as Balance
   const blockHeight = event.block.block.header.number.toNumber()
 
-  await handleBuyOrder(account, amount, blockHeight, true)
+  await handleBuyOrder(account, amount, blockHeight, fromStake)
 }
 
 async function handleBuyOrder(
@@ -113,18 +115,19 @@ async function handleBuyOrder(
 }
 
 export async function handleSTokenBurned(event: SubstrateEvent) {
-  // TODO: ignore crosschain for now, then this happens
-  // only when users unstake
   const assetId = event.event.data[0] as AssetId
   if (!assetId.eq(liquidCurrency)) {
     return
   }
 
+  const fromUnstake =
+    event.extrinsic &&
+    checkTransaction('liquidStaking', 'unstake', event.extrinsic.extrinsic)
   const account = event.event.data[1] as AccountId
   const amount = event.event.data[2] as Balance
   const blockHeight = event.block.block.header.number.toNumber()
 
-  await handleSellOrder(account, amount, blockHeight, true)
+  await handleSellOrder(account, amount, blockHeight, fromUnstake)
 }
 
 async function handleSellOrder(
@@ -481,4 +484,13 @@ export async function handleFarmingWithdrew(event: SubstrateEvent) {
   position.blockHeight = blockHeight
 
   await position.save()
+}
+
+const checkTransaction = (
+  sectionFilter: string,
+  methodFilter: string,
+  call: Extrinsic
+) => {
+  const { section, method } = call.registry.findMetaCall(call.callIndex)
+  return section === sectionFilter && method === methodFilter
 }
