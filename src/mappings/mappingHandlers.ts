@@ -1,6 +1,6 @@
 import { SubstrateEvent, SubstrateBlock } from '@subql/types'
 import { PalletStakingStakingLedger } from '@polkadot/types/lookup'
-import { stakingCurrency, liquidCurrency } from '../constants'
+import { stakingCurrency, liquidCurrency, nativeCurrency } from '../constants'
 import { Ledger, StakingPosition, FarmingPosition } from '../types'
 import { BN } from '@polkadot/util'
 import { AccountId } from '@polkadot/types/interfaces'
@@ -11,7 +11,7 @@ import {
   updateStakingAction,
   updateBlockMetadatas
 } from '../handlers'
-import { createAddress } from '../utils'
+import { createAddress, farmingPoolAccountId } from '../utils'
 
 export async function handleBlock(block: SubstrateBlock): Promise<void> {
   await updateBlockMetadatas(block)
@@ -80,6 +80,7 @@ async function handleBuyOrder(
       totalStaked: '0',
       totalEarned: '0',
       lending: '0',
+      farming: '0',
       avgExchangeRate: '1000000000000000000',
       balance: '0',
       blockHeight
@@ -90,9 +91,15 @@ async function handleBuyOrder(
 
   if (fromStake) {
     const newAvgExchangeRate = new BN(position.avgExchangeRate)
-      .mul(new BN(position.balance).add(new BN(position.lending)))
+      .mul(
+        new BN(position.balance)
+          .add(new BN(position.lending))
+          .add(new BN(position.farming))
+      )
       .add(amount.toBn().mul(exchangeRate.toBn()))
-      .div(newBalance.add(new BN(position.lending)))
+      .div(
+        newBalance.add(new BN(position.lending)).add(new BN(position.farming))
+      )
     position.totalStaked = new BN(position.totalStaked)
       .add(amount.toBn())
       .toString()
@@ -163,12 +170,18 @@ export async function handleSTokenTransferred(event: SubstrateEvent) {
   const blockHeight = event.block.block.header.number.toNumber()
   const loansAddress = createAddress('par/loan')
   const ammAddress = createAddress('par/ammp')
+  const liquidStakingAddress = createAddress('par/lqsk')
+  const farmingPoolAddress = farmingPoolAccountId(assetId.toNumber())
 
   if (
     from.toString() == loansAddress ||
     to.toString() == loansAddress ||
     from.toString() == ammAddress ||
-    to.toString() == ammAddress
+    to.toString() == ammAddress ||
+    from.toString() == liquidStakingAddress ||
+    to.toString() == liquidStakingAddress ||
+    from.toString() == farmingPoolAddress ||
+    to.toString() == farmingPoolAddress
   ) {
     return
   }
@@ -208,7 +221,7 @@ export async function handleSTokenDeposited(event: SubstrateEvent) {
   }
 
   const id = account.toString()
-  let position = await StakingPosition.get(id)
+  const position = await StakingPosition.get(id)
   if (!position) {
     return
   }
@@ -231,7 +244,7 @@ export async function handleSTokenRedeemed(event: SubstrateEvent) {
   }
 
   const id = account.toString()
-  let position = await StakingPosition.get(id)
+  const position = await StakingPosition.get(id)
   if (!position) {
     return
   }
@@ -286,7 +299,7 @@ export async function handleSTokenLiquidatedBorrow(event: SubstrateEvent) {
   }
 
   const id = account.toString()
-  let position = await StakingPosition.get(id)
+  const position = await StakingPosition.get(id)
   if (!position) {
     return
   }
@@ -390,4 +403,82 @@ export async function handleLiquidityRemoved(event: SubstrateEvent) {
   if (quoteAsset.eq(liquidCurrency)) {
     await handleBuyOrder(account, quoteAmount, blockHeight)
   }
+}
+
+export async function handleFarmingRewardPaid(event: SubstrateEvent) {
+  const supplier = event.event.data[0] as AccountId
+  const assetId = event.event.data[1] as AssetId
+  const rewardAssetId = event.event.data[2] as AssetId
+  const amount = event.event.data[4] as Balance
+  const blockHeight = event.block.block.header.number.toNumber()
+
+  if (!assetId.eq(liquidCurrency) || !rewardAssetId.eq(nativeCurrency)) {
+    return
+  }
+
+  const id = supplier.toString()
+  let farmingPosition = await FarmingPosition.get(id)
+  if (!farmingPosition) {
+    farmingPosition = FarmingPosition.create({
+      id,
+      accrued: '0',
+      claimed: '0',
+      blockHeight
+    })
+  }
+
+  farmingPosition.claimed = new BN(farmingPosition.claimed)
+    .add(amount.toBn())
+    .toString()
+  farmingPosition.blockHeight = blockHeight
+
+  await farmingPosition.save()
+}
+
+export async function handleFarmingDeposited(event: SubstrateEvent) {
+  const account = event.event.data[0] as AccountId
+  const assetId = event.event.data[1] as AssetId
+  const rewardAssetId = event.event.data[2] as AssetId
+  const amount = event.event.data[4] as Balance
+  const blockHeight = event.block.block.header.number.toNumber()
+
+  if (!assetId.eq(liquidCurrency) || !rewardAssetId.eq(nativeCurrency)) {
+    return
+  }
+
+  const id = account.toString()
+  const position = await StakingPosition.get(id)
+  if (!position) {
+    return
+  }
+
+  position.farming = new BN(position.farming).add(amount.toBn()).toString()
+  position.balance = new BN(position.balance).sub(amount.toBn()).toString()
+  position.blockHeight = blockHeight
+
+  await position.save()
+}
+
+export async function handleFarmingWithdrew(event: SubstrateEvent) {
+  const account = event.event.data[0] as AccountId
+  const assetId = event.event.data[1] as AssetId
+  const rewardAssetId = event.event.data[2] as AssetId
+  const amount = event.event.data[4] as Balance
+  const blockHeight = event.block.block.header.number.toNumber()
+
+  if (!assetId.eq(liquidCurrency) || !rewardAssetId.eq(nativeCurrency)) {
+    return
+  }
+
+  const id = account.toString()
+  const position = await StakingPosition.get(id)
+  if (!position) {
+    return
+  }
+
+  position.farming = new BN(position.farming).sub(amount.toBn()).toString()
+  position.balance = new BN(position.balance).add(amount.toBn()).toString()
+  position.blockHeight = blockHeight
+
+  await position.save()
 }
