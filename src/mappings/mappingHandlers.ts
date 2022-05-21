@@ -17,6 +17,7 @@ import {
   farmingPoolAccountId,
   toSubstrateAddress
 } from '../utils'
+import { Vec } from '@polkadot/types'
 
 export async function handleBlock(block: SubstrateBlock): Promise<void> {
   await updateBlockMetadatas(block)
@@ -57,6 +58,8 @@ export async function handleSTokenIssued(event: SubstrateEvent) {
   if (!assetId.eq(liquidCurrency)) {
     return
   }
+
+  logEvent(event)
 
   const fromStake =
     event.extrinsic &&
@@ -124,6 +127,8 @@ export async function handleSTokenBurned(event: SubstrateEvent) {
     return
   }
 
+  logEvent(event)
+
   const fromUnstake =
     event.extrinsic &&
     checkTransaction('liquidStaking', 'unstake', event.extrinsic.extrinsic)
@@ -170,6 +175,8 @@ export async function handleSTokenTransferred(event: SubstrateEvent) {
     return
   }
 
+  logEvent(event)
+
   const from = event.event.data[1] as AccountId
   const to = event.event.data[2] as AccountId
   const fromSubstrateFmt = toSubstrateAddress(from)
@@ -207,6 +214,8 @@ export async function handleSTokenTraded(event: SubstrateEvent) {
     return
   }
 
+  logEvent(event)
+
   const isSell = assetIdIn.eq(liquidCurrency)
   if (isSell) {
     await handleSellOrder(account, amountIn, blockHeight)
@@ -224,6 +233,8 @@ export async function handleSTokenDeposited(event: SubstrateEvent) {
   if (!assetId.eq(liquidCurrency)) {
     return
   }
+
+  logEvent(event)
 
   const id = account.toString()
   const position = await StakingPosition.get(id)
@@ -254,6 +265,8 @@ export async function handleSTokenRedeemed(event: SubstrateEvent) {
     return
   }
 
+  logEvent(event)
+
   // TODO: supply APY may cause this to underflow
   position.lending = (
     new BN(position.lending).gt(amount.toBn())
@@ -277,6 +290,8 @@ export async function handleSTokenBorrowed(event: SubstrateEvent) {
     return
   }
 
+  logEvent(event)
+
   await handleBuyOrder(account, amount, blockHeight)
 }
 
@@ -290,6 +305,8 @@ export async function handleSTokenRepaid(event: SubstrateEvent) {
     return
   }
 
+  logEvent(event)
+
   await handleSellOrder(account, amount, blockHeight)
 }
 
@@ -302,6 +319,8 @@ export async function handleSTokenLiquidatedBorrow(event: SubstrateEvent) {
   if (!assetId.eq(liquidCurrency)) {
     return
   }
+
+  logEvent(event)
 
   const id = account.toString()
   const position = await StakingPosition.get(id)
@@ -329,6 +348,8 @@ export async function handleSupplierRewardDistributed(event: SubstrateEvent) {
   if (!assetId.eq(liquidCurrency)) {
     return
   }
+
+  logEvent(event)
 
   const id = supplier.toString()
   let farmingPosition = await FarmingPosition.get(id)
@@ -359,6 +380,8 @@ export async function handleRewardPaid(event: SubstrateEvent) {
     return
   }
 
+  logEvent(event)
+
   farmingPosition.claimed = new BN(farmingPosition.claimed)
     .add(new BN(farmingPosition.accrued))
     .toString()
@@ -379,6 +402,8 @@ export async function handleLiquidityAdded(event: SubstrateEvent) {
   if (!baseAsset.eq(liquidCurrency) && !quoteAsset.eq(liquidCurrency)) {
     return
   }
+
+  logEvent(event)
 
   if (baseAsset.eq(liquidCurrency)) {
     await handleSellOrder(account, baseAmount, blockHeight)
@@ -401,6 +426,8 @@ export async function handleLiquidityRemoved(event: SubstrateEvent) {
     return
   }
 
+  logEvent(event)
+
   if (baseAsset.eq(liquidCurrency)) {
     await handleBuyOrder(account, baseAmount, blockHeight)
   }
@@ -420,6 +447,8 @@ export async function handleFarmingRewardPaid(event: SubstrateEvent) {
   if (!assetId.eq(liquidCurrency) || !rewardAssetId.eq(nativeCurrency)) {
     return
   }
+
+  logEvent(event)
 
   const id = supplier.toString()
   let farmingPosition = await FarmingPosition.get(id)
@@ -451,6 +480,8 @@ export async function handleFarmingDeposited(event: SubstrateEvent) {
     return
   }
 
+  logEvent(event)
+
   const id = account.toString()
   const position = await StakingPosition.get(id)
   if (!position) {
@@ -475,6 +506,8 @@ export async function handleFarmingWithdrew(event: SubstrateEvent) {
     return
   }
 
+  logEvent(event)
+
   const id = account.toString()
   const position = await StakingPosition.get(id)
   if (!position) {
@@ -494,5 +527,28 @@ const checkTransaction = (
   call: Extrinsic
 ) => {
   const { section, method } = call.registry.findMetaCall(call.callIndex)
-  return section === sectionFilter && method === methodFilter
+  return (
+    (section === sectionFilter && method === methodFilter) ||
+    (section === 'utility' &&
+      ['batchAll', 'batch'].includes(method) &&
+      (call.args[0] as Vec<Extrinsic>).some((e) =>
+        checkTransaction(sectionFilter, methodFilter, e)
+      )) ||
+    (section === 'proxy' &&
+      method === 'proxy' &&
+      checkTransaction(sectionFilter, methodFilter, call.args[2] as Extrinsic))
+  )
+}
+
+const logEvent = (originalEvent: SubstrateEvent) => {
+  const { event, extrinsic } = originalEvent
+  logger.info(`Event: ${event.section}.${event.method}, Data: ${event.data}`)
+  if (extrinsic) {
+    const { section, method } = extrinsic.extrinsic.registry.findMetaCall(
+      extrinsic.extrinsic.callIndex
+    )
+    logger.info(
+      `Extrinsic: ${section}.${method}, Args: [${extrinsic.extrinsic.args}]`
+    )
+  }
 }
