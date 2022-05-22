@@ -15,7 +15,7 @@ schema:
   file: ./schema.graphql
 network:
   endpoint: 'wss://regnet4-rpc.parallel.fi'
-  chainId: '0x62a81e71b66e51283294fb9bdce013bc31d1210f1867ef63fcdce77c3cc0b346'
+  chainId: '0xaef53b373e23b1e01b7335dc6e9ae9618c07fd04c268d9a9149ae7c46032f9ee'
   dictionary: ''
   chaintypes:
     file: ./dist/chaintypes.js
