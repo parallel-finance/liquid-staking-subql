@@ -90,6 +90,7 @@ async function handleBuyOrder(
       totalEarned: '0',
       lending: '0',
       farming: '0',
+      borrowing: '0',
       avgExchangeRate: exchangeRate.toString(),
       balance: '0',
       blockHeight
