@@ -418,8 +418,8 @@ export async function handleLiquidityRemoved(event: SubstrateEvent) {
   const account = event.event.data[0] as AccountId
   const baseAsset = event.event.data[1] as AssetId
   const quoteAsset = event.event.data[2] as AssetId
-  const baseAmount = event.event.data[3] as Balance
-  const quoteAmount = event.event.data[4] as Balance
+  const baseAmount = event.event.data[4] as Balance
+  const quoteAmount = event.event.data[5] as Balance
   const blockHeight = event.block.block.header.number.toNumber()
 
   if (!baseAsset.eq(liquidCurrency) && !quoteAsset.eq(liquidCurrency)) {
