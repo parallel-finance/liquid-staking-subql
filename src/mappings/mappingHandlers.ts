@@ -292,7 +292,16 @@ export async function handleSTokenBorrowed(event: SubstrateEvent) {
 
   logEvent(event)
 
-  await handleBuyOrder(account, amount, blockHeight)
+  const id = account.toString()
+  const position = await StakingPosition.get(id)
+  if (!position) {
+    return
+  }
+
+  position.borrowing = new BN(position.borrowing).add(amount.toBn()).toString()
+  position.blockHeight = blockHeight
+
+  await position.save()
 }
 
 export async function handleSTokenRepaid(event: SubstrateEvent) {
@@ -307,16 +316,35 @@ export async function handleSTokenRepaid(event: SubstrateEvent) {
 
   logEvent(event)
 
-  await handleSellOrder(account, amount, blockHeight)
+  const id = account.toString()
+  const position = await StakingPosition.get(id)
+  if (!position) {
+    return
+  }
+
+  // TODO: borrow APY may cause this to underflow
+  position.borrowing = (
+    new BN(position.borrowing).gt(amount.toBn())
+      ? new BN(position.borrowing).sub(amount.toBn())
+      : new BN(0)
+  ).toString()
+  position.blockHeight = blockHeight
+
+  await position.save()
 }
 
 export async function handleSTokenLiquidatedBorrow(event: SubstrateEvent) {
   const account = event.event.data[1] as AccountId
-  const assetId = event.event.data[3] as AssetId
+  const liquidationAssetId = event.event.data[2] as AssetId
+  const collateralAssetId = event.event.data[3] as AssetId
+  const repayAmount = event.event.data[4] as Balance
   const amount = event.event.data[5] as Balance
   const blockHeight = event.block.block.header.number.toNumber()
 
-  if (!assetId.eq(liquidCurrency)) {
+  if (
+    !collateralAssetId.eq(liquidCurrency) &&
+    !liquidationAssetId.eq(liquidCurrency)
+  ) {
     return
   }
 
@@ -328,12 +356,24 @@ export async function handleSTokenLiquidatedBorrow(event: SubstrateEvent) {
     return
   }
 
-  // TODO: supply APY may cause this to underflow
-  position.lending = (
-    new BN(position.lending).gt(amount.toBn())
-      ? new BN(position.lending).sub(amount.toBn())
-      : new BN(0)
-  ).toString()
+  if (collateralAssetId.eq(liquidCurrency)) {
+    // TODO: supply APY may cause this to underflow
+    position.lending = (
+      new BN(position.lending).gt(amount.toBn())
+        ? new BN(position.lending).sub(amount.toBn())
+        : new BN(0)
+    ).toString()
+  }
+
+  if (liquidationAssetId.eq(liquidCurrency)) {
+    // TODO: borrow APY may cause this to underflow
+    position.borrowing = (
+      new BN(position.borrowing).gt(repayAmount.toBn())
+        ? new BN(position.borrowing).sub(repayAmount.toBn())
+        : new BN(0)
+    ).toString()
+  }
+
   position.blockHeight = blockHeight
 
   await position.save()
