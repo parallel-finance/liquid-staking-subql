@@ -7,7 +7,8 @@ Based on [SubQuery](https://www.subquery.network/) project defines for collect t
 ### Start project in Docker
 
 ```
-docker-compose pull && docker-compose up
+yarn
+make launch
 ```
 
 ### Query data
@@ -41,13 +42,15 @@ Finally, you should see a GraphQL playground is showing in the explorer and the 
 
 Staking & Farming Positions
 
-```
+```graphql
 {
   query {
     stakingPositions(
       orderBy: BLOCK_HEIGHT_ASC
       first: 100
-      filter: { id:  { equalTo: "hJKzPoi3MQnSLvbShxeDmzbtHncrMXe5zwS3Wa36P6kXeNpcv" } }
+      filter: {
+        id: { equalTo: "hJKzPoi3MQnSLvbShxeDmzbtHncrMXe5zwS3Wa36P6kXeNpcv" }
+      }
     ) {
       nodes {
         id
@@ -63,7 +66,9 @@ Staking & Farming Positions
     farmingPositions(
       orderBy: BLOCK_HEIGHT_ASC
       first: 100
-      filter: { id:  { equalTo: "hJKzPoi3MQnSLvbShxeDmzbtHncrMXe5zwS3Wa36P6kXeNpcv" } }
+      filter: {
+        id: { equalTo: "hJKzPoi3MQnSLvbShxeDmzbtHncrMXe5zwS3Wa36P6kXeNpcv" }
+      }
     ) {
       nodes {
         id
